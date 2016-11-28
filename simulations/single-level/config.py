@@ -2,7 +2,7 @@ import ConfigParser, os, scipy
 import numpy as np
 
 from gpmultipy.kernel import RBF, White
-from gpmultipy import Prior
+from gpmultipy import Prior, Model
 
 def load(cdir,fname='config.cfg',randomize=False):
 
@@ -29,16 +29,21 @@ def load(cdir,fname='config.cfg',randomize=False):
                                     loc=config.getfloat('sigmaPrior','loc'),
                                     scale=config.getfloat('sigmaPrior','scale'))
     else:
-        sigmaYprior = scipy.stats.lognorm(s=1.8e0,scale=8e-2)
-        lengthscalePrior = scipy.stats.lognorm(s=9e-1,scale=2e0)
-        sigmaPrior = scipy.stats.lognorm(s=1.8e0,scale=5e-0)
+        sigmaYprior = scipy.stats.lognorm(s=config.getfloat('sigmaYprior','s'),scale=config.getfloat('sigmaYprior','scale'))
+        lengthscalePrior = scipy.stats.lognorm(s=config.getfloat('lengthscalePrior','s'),scale=config.getfloat('lengthscalePrior','scale'))
+        sigmaPrior = scipy.stats.lognorm(s=config.getfloat('sigmaPrior','s'),scale=config.getfloat('sigmaPrior','scale'))
 
     if randomize:
+        model = Model(x,y,dm)
+
         yKernel.sigma = sigmaYprior.rvs()
         k1.sigma = sigmaPrior.rvs()
         k1.lengthscale = lengthscalePrior.rvs()
         k2.sigma = sigmaPrior.rvs()
         k2.lengthscale = lengthscalePrior.rvs()
+
+        prior.sample(model,yKernel)
+        prior2.sample(model,yKernel)
 
     p = config.getint('main','nrep')
 
