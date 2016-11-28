@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if not args.run in os.listdir(os.path.join(args.configuration,args.label)):
         os.mkdir(os.path.join(args.configuration,args.label,args.run))
 
-    x, p, dm, kernels, paramPriors, priors = config.load(args.configuration)
+    x, p, dm, kernels, paramPriors, priors = config.load(args.configuration,randomize=True)
     yKernel, k1, k2 = kernels
     sigmaYprior, lengthscalePrior, sigmaPrior = paramPriors
     prior, prior2 = priors
@@ -38,17 +38,17 @@ if __name__ == "__main__":
 
     # randomize
 
-    yKernel.sigma = sigmaYprior.rvs()
-    k1.sigma = sigmaPrior.rvs()
-    k1.lengthscale = lengthscalePrior.rvs()
-    k2.sigma = sigmaPrior.rvs()
-    k2.lengthscale = lengthscalePrior.rvs()
+    # yKernel.sigma = sigmaYprior.rvs()
+    # k1.sigma = sigmaPrior.rvs()
+    # k1.lengthscale = lengthscalePrior.rvs()
+    # k2.sigma = sigmaPrior.rvs()
+    # k2.lengthscale = lengthscalePrior.rvs()
 
     # model.beta[:,0] = scipy.stats.multivariate_normal.rvs(np.zeros(50),k1.K(x))
     # for i in range(1,model.beta.shape[1]):
     #     model.beta[:,i] = scipy.stats.multivariate_normal.rvs(np.zeros(50),k2.K(x))
-    prior.sample(model,yKernel)
-    prior2.sample(model,yKernel)
+    # prior.sample(model,yKernel)
+    # prior2.sample(model,yKernel)
 
     """
     SAMPLE
