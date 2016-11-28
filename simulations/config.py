@@ -36,7 +36,7 @@ class Configuration(object):
         self.buildDesignMatrix()
 
         self.x = np.linspace(-1,1)[:,None]
-        self.y = np.zeros((self.x.shape[0],self.p))
+        self.y = np.zeros((self.x.shape[0],self.dm.shape[1]))
 
         if self.config.getboolean('main','uniformPrior'):
             self.sigmaYprior = scipy.stats.uniform(
@@ -85,19 +85,12 @@ class Configuration(object):
         k = 1
 
         for i in range(self.levels):
-            # stab = max(sum(self.nreps[i+1:]),1) # step-size
             stab = max(np.prod(self.nreps[i+1:]),1) # step-size
             stab = int(stab)
 
-            # print i,stab
-
             for j in range(self.nf[i+1]):
                 self.dm[k,j*stab:(j+1)*stab] = 1
-
                 k+=1
-
-
-        # np.fill_diagonal(self.dm[1:,:],1)
 
     def setDefault(self,name,value):
 
@@ -109,7 +102,7 @@ class Configuration(object):
         self.setDefault("levels",'1')
         self.setDefault("sigma",'1.0')
         self.setDefault("lengthscale",'1.0')
-        self.setDefault("nrep",'10')
+        self.setDefault("nrep",'3')
         self.setDefault('uniformPrior','True')
         self.setDefault('loc','1.0')
         self.setDefault('scale','1.0')
