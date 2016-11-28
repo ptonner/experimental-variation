@@ -38,26 +38,38 @@ class Configuration(object):
         self.x = np.linspace(-1,1)[:,None]
         self.y = np.zeros((self.x.shape[0],self.dm.shape[1]))
 
+        self.priors = {'yKernel':{}, 'functions':{}, 'k1':{}}
+        for i in range(self.levels+1):
+            self.priors['k%d'%(i+1)] = {}
+
         if self.config.getboolean('main','uniformPrior'):
-            self.sigmaYprior = scipy.stats.uniform(
+            self.priors['yKernel']['sigma'] = scipy.stats.uniform(
                                         loc=self.config.getfloat('sigmaYprior','loc'),
                                         scale=self.config.getfloat('sigmaYprior','scale')
                                         )
 
-            self.lengthscalePrior = scipy.stats.uniform(
-                                        loc=self.config.getfloat('lengthscalePrior','loc'),
-                                        scale=self.config.getfloat('lengthscalePrior','scale'))
+            for i in range(self.levels+1):
+                self.priors['k%d'%(i+1)]['lengthscale'] = scipy.stats.uniform(
+                                            loc=self.config.getfloat('lengthscalePrior','loc'),
+                                            scale=self.config.getfloat('lengthscalePrior','scale'))
 
-            self.sigmaPrior = scipy.stats.uniform(
-                                        loc=self.config.getfloat('sigmaPrior','loc'),
-                                        scale=self.config.getfloat('sigmaPrior','scale'))
+                self.priors['k%d'%(i+1)]['sigma'] = scipy.stats.uniform(
+                                            loc=self.config.getfloat('sigmaPrior','loc'),
+                                            scale=self.config.getfloat('sigmaPrior','scale'))
         else:
-            self.sigmaYprior = scipy.stats.lognorm(s=self.config.getfloat('sigmaYprior','s'),scale=self.config.getfloat('sigmaYprior','scale'))
-            self.lengthscalePrior = scipy.stats.lognorm(s=self.config.getfloat('lengthscalePrior','s'),scale=self.config.getfloat('lengthscalePrior','scale'))
-            self.sigmaPrior = scipy.stats.lognorm(s=self.config.getfloat('sigmaPrior','s'),scale=self.config.getfloat('sigmaPrior','scale'))
+            self.priors['yKernel']['sigma'] = scipy.stats.lognorm(s=self.config.getfloat('sigmaYprior','s'),scale=self.config.getfloat('sigmaYprior','scale'))
 
-        self.prior = Prior(self.x,self.k1,[0])
-        self.prior2 = Prior(self.x,self.k2,range(1,self.dm.shape[0]))
+            for i in range(self.levels+1):
+                self.priors['k%d'%(i+1)]['lengthscale'] = scipy.stats.lognorm(s=self.config.getfloat('lengthscalePrior','s'),scale=self.config.getfloat('lengthscalePrior','scale'))
+                self.priors['k%d'%(i+1)]['priors'] = scipy.stats.lognorm(s=self.config.getfloat('sigmaPrior','s'),scale=self.config.getfloat('sigmaPrior','scale'))
+
+        # self.priors['functions'][0] = Prior(self.x,self.k1,[0])
+
+        for i in range(self.levels+1):
+            start = sum(self.nf[:i])
+            stahp = start+self.nf[i]
+
+            self.priors['functions'][i] = Prior(self.x,self.__dict__['k%d'%(i+1)],range(start,stahp))
 
         if randomize:
             self.model = Model(self.x,self.y,self.dm)
@@ -73,9 +85,9 @@ class Configuration(object):
 
     def get(self):
         kernels = [self.yKernel, self.k1]
-        kernels += [self.__dict__['k%d'(i+2)] for i in range(self.levels)]
+        kernels += [self.__dict__['k%d'%(i+2)] for i in range(self.levels)]
 
-        return self.x, self.p, self.dm, kernels, [self.sigmaYprior, self.lengthscalePrior, self.sigmaPrior], [self.prior, self.prior2]
+        return self.x, self.p, self.dm, kernels, self.priors, [self.prior, self.prior2]
 
     def buildDesignMatrix(self):
 
