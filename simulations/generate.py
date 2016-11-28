@@ -1,7 +1,8 @@
-import gpmultipy, scipy, argparse, os, config
+import gpmultipy, scipy, argparse, os
 import numpy as np
 import pandas as pd
 
+from config import Configuration
 from gpmultipy.kernel import RBF, White
 from gpmultipy.freeze import Freezer
 from gpmultipy import Model
@@ -17,32 +18,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    x, p, dm, kernels, paramPriors, priors = config.load(args.configuration)
-
-    yKernel, k1, k2 = kernels
-
+    config = Configuration(args.configuration)
+    x, p, dm, kernels, priors = config.get()
 
     if args.label != "" and not args.label in os.listdir(args.configuration):
         os.mkdir(os.path.join(args.configuration,args.label))
 
-    # yKernel.sigma = sigmaYprior.rvs()
-    # k1.sigma = sigmaPrior.rvs()
-    # k1.lengthscale = lengthscalePrior.rvs()
-    # k2.sigma = sigmaPrior.rvs()
-    # k2.lengthscale = lengthscalePrior.rvs()
+    betaTrue = np.zeros((x.shape[0],dm.shape[0]))
 
-    betaTrue = np.zeros((50,p+1))
-    betaTrue[:,0] = scipy.stats.multivariate_normal.rvs(np.zeros(50),k1.K(x))
+    for f in range(config.f):
+        ind = min(np.where(f < config.cumnf)[0]) + 1
+        # print f,ind
 
-    for i in range(1,betaTrue.shape[1]):
-        betaTrue[:,i] = scipy.stats.multivariate_normal.rvs(np.zeros(50),k2.K(x))
+        kernel = kernels[ind]
+        betaTrue[:,f] = scipy.stats.multivariate_normal.rvs(np.zeros(x.shape[0]),kernel.K(x))
 
-    y = np.dot(betaTrue,dm) + scipy.stats.multivariate_normal.rvs(np.zeros(50),yKernel.K(x),size=p).reshape((50,p))
+    y = np.dot(betaTrue,dm) + scipy.stats.multivariate_normal.rvs(np.zeros(x.shape[0]),kernels[0].K(x),size=p).reshape((x.shape[0],p))
 
     model = Model(x,y,dm)
     model.beta = betaTrue
 
-    freeze = Freezer(yKernel=yKernel,k1=k1,k2=k2,model=model)
+    kwargs = {'k%d'%(i+1):kernels[i+1] for i in range(config.levels)}
+    freeze = Freezer(yKernel=kernels[0],model=model,**kwargs)
     trueSample = freeze.freeze()
     freeze.save([trueSample],os.path.join(args.configuration,args.label,'parameters-true.json'))
 

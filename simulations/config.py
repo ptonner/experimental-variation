@@ -31,6 +31,7 @@ class Configuration(object):
             self.p = np.prod(self.nreps)
 
         self.nf = [1] + [np.product(self.nreps[:i]) for i in range(1,self.levels+1)]
+        self.cumnf = np.cumsum(self.nf)
         self.f = sum(self.nf)
 
         self.buildDesignMatrix()
@@ -87,7 +88,7 @@ class Configuration(object):
         kernels = [self.yKernel, self.k1]
         kernels += [self.__dict__['k%d'%(i+2)] for i in range(self.levels)]
 
-        return self.x, self.p, self.dm, kernels, self.priors, [self.prior, self.prior2]
+        return self.x, self.p, self.dm, kernels, self.priors
 
     def buildDesignMatrix(self):
 
