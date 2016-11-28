@@ -21,7 +21,18 @@ class Configuration(object):
 
         self._buildKernels()
 
-        self.p = self.config.getint('main','nrep')
+        # if only one level and nrep provided in main, use that
+        if self.levels == 1 and self.config.has_option('main','nrep'):
+            self.p = self.config.getint('main','nrep')
+            self.nreps = [self.p]
+        # otherwise use product of all levels
+        else:
+            self.nreps = [self.config.getint('level%d'%(i+1),'nrep') for i in range(self.levels)]
+            self.p = np.prod(self.nreps)
+
+        self.nf = [1] + [np.product(self.nreps[:i]) for i in range(1,self.levels+1)]
+        self.f = sum(self.nf)
+
         self.buildDesignMatrix()
 
         self.x = np.linspace(-1,1)[:,None]
@@ -68,9 +79,25 @@ class Configuration(object):
 
     def buildDesignMatrix(self):
 
-        self.dm = np.zeros((1+self.p,self.p))
+        self.dm = np.zeros((self.f,self.p))
         self.dm[0,:] = 1
-        np.fill_diagonal(self.dm[1:,:],1)
+
+        k = 1
+
+        for i in range(self.levels):
+            # stab = max(sum(self.nreps[i+1:]),1) # step-size
+            stab = max(np.prod(self.nreps[i+1:]),1) # step-size
+            stab = int(stab)
+
+            # print i,stab
+
+            for j in range(self.nf[i+1]):
+                self.dm[k,j*stab:(j+1)*stab] = 1
+
+                k+=1
+
+
+        # np.fill_diagonal(self.dm[1:,:],1)
 
     def setDefault(self,name,value):
 
@@ -82,18 +109,29 @@ class Configuration(object):
         self.setDefault("levels",'1')
         self.setDefault("sigma",'1.0')
         self.setDefault("lengthscale",'1.0')
+        self.setDefault("nrep",'10')
+        self.setDefault('uniformPrior','True')
+        self.setDefault('loc','1.0')
+        self.setDefault('scale','1.0')
+        self.setDefault('s','1.0')
 
     def _checkLevelConfig(self):
         """Check that sections are available matching the number of levels, add if needed."""
 
         for i in range(self.levels):
+
+            # check for kernels for each level
             if not self.config.has_section("k%d"%(i+2)):
                 self.config.add_section("k%d"%(i+2))
+
+            # check for level config section
+            if not self.config.has_section("level%d"%(i+1)):
+                self.config.add_section("level%d"%(i+1))
 
     def _buildKernels(self,):
         self.yKernel = White(1,self.config.getfloat('yKernel','sigma'))
         self.k1 = RBF(1,self.config.getfloat('k1','sigma'),self.config.getfloat('k1','lengthscale'))
 
         for i in range(self.levels):
-            k = 'k%d'(i+2)
+            k = 'k%d'%(i+2)
             self.__dict__[k] = RBF(1,self.config.getfloat(k,'sigma'),self.config.getfloat(k,'lengthscale'))
