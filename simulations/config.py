@@ -1,4 +1,4 @@
-import ConfigParser, os, scipy
+import ConfigParser, os, scipy, patsy
 import numpy as np
 
 from gpmultipy.kernel import RBF, White
@@ -17,6 +17,26 @@ class Configuration(object):
         # this is the number of variation levels in the model
         self.levels = self.config.getint('main','levels')
 
+        #experimental design
+        self.design = self.config.get('main','design')
+
+        self.nf = []
+        if self.design == 'mean':
+            self.nf.append(1)
+        elif self.design=='single-treatment':
+            self.tmnts = self.config.getint('main','treatments')
+            self.nf.append(self.tmnts)
+        elif self.design=='multiple-treatment':
+            self.tmnts = self.config.getint('main','treatments')
+            self.factors = self.config.getint('main','factors')
+            self.crossed = self.config.getboolean('main','crossed')
+
+            if self.crossed:
+                tot = self.tmnts*self.tmnts*(self.factors-1)
+            else:
+                tot = self.tmnts*self.factors
+            self.nf.append(tot)
+
         self._checkLevelConfig()
 
         self._buildKernels()
@@ -30,8 +50,10 @@ class Configuration(object):
             self.nreps = [self.config.getint('level%d'%(i+1),'nrep') for i in range(self.levels)]
             self.p = np.prod(self.nreps)
 
-        self.nf = [1] + [np.product(self.nreps[:i]) for i in range(1,self.levels+1)]
+        # add the number of functions from replicate structure
+        self.nf += [self.nf[0]*np.product(self.nreps[:i]) for i in range(1,self.levels+1)]
         self.cumnf = np.cumsum(self.nf)
+        self.cumnreps = np.cumprod(self.nreps)
         self.f = sum(self.nf)
 
         self.buildDesignMatrix()
@@ -92,18 +114,38 @@ class Configuration(object):
 
     def buildDesignMatrix(self):
 
-        self.dm = np.zeros((self.f,self.p))
-        self.dm[0,:] = 1
 
-        k = 1
+        self.designs = []
+        if self.design == 'mean':
+            self.designs = np.ones((1,1))
+        elif self.design == 'single-treatment':
+            self.contrast = patsy.contrasts.Helmert().code_without_intercept(range(self.tmnts)).matrix
+            self.designs = np.row_stack((np.ones((1,self.contrast.shape[0])), self.contrast.T))
 
+        k = 0
+        self.replicates = np.zeros((np.sum(self.cumnreps),self.p))
+        # self.replicates = np.zeros((100,self.p))
         for i in range(self.levels):
             stab = max(np.prod(self.nreps[i+1:]),1) # step-size
             stab = int(stab)
 
-            for j in range(self.nf[i+1]):
-                self.dm[k,j*stab:(j+1)*stab] = 1
+            # print i,stab
+
+            # for j in range(self.nreps[i]):
+            for j in range(self.p/stab):
+                # print i,j,k
+                self.replicates[k,j*stab:(j+1)*stab] = 1
                 k+=1
+
+        self.dm = np.zeros((self.f,self.p*self.nf[0]))
+        self.dm[:self.nf[0],:] = self.designs.repeat(self.p,1)
+
+        offset = self.nf[0]
+        for i in range(self.nf[0]):
+            col = i*self.p
+            row = i*self.replicates.shape[0] + offset
+
+            self.dm[row:row+self.replicates.shape[0],col:col+self.replicates.shape[1]] = self.replicates
 
     def setDefault(self,name,value):
 
@@ -113,6 +155,11 @@ class Configuration(object):
     def _setDefaults(self):
 
         self.setDefault("levels",'1')
+        self.setDefault("design",'mean')
+        self.setDefault("treatments",'2')
+        self.setDefault("factors",'2')
+        self.setDefault("crossed",'False')
+        self.setDefault("variable-selection",'False')
         self.setDefault("sigma",'1.0')
         self.setDefault("lengthscale",'1.0')
         self.setDefault("nrep",'3')
