@@ -110,7 +110,7 @@ class Configuration(object):
         kernels = [self.yKernel, self.k1]
         kernels += [self.__dict__['k%d'%(i+2)] for i in range(self.levels)]
 
-        return self.x, self.p, self.dm, kernels, self.priors
+        return self.x, self.dm.shape[1], self.dm, kernels, self.priors
 
     def buildDesignMatrix(self):
 

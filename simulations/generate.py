@@ -16,9 +16,12 @@ if __name__ == "__main__":
     parser.add_argument('-l', dest='label', action='store',default='', type=str,
 	                   help='label for output')
 
+    parser.add_argument('-f', dest='fname', action='store',default='config.cfg', type=str,
+	                   help='config filename')
+
     args = parser.parse_args()
 
-    config = Configuration(args.configuration)
+    config = Configuration(args.configuration,args.fname)
     x, p, dm, kernels, priors = config.get()
 
     if args.label != "" and not args.label in os.listdir(args.configuration):
