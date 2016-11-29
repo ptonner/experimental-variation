@@ -38,6 +38,7 @@ class Sample(object):
 
         self.freeze = Freezer(model=self.model,**kwargs)
         self.startSample = self.freeze.freeze()
+        self.samples = []
 
     def _buildSamplers(self):
         self.samplers = []
@@ -72,7 +73,7 @@ class Sample(object):
             self._sampleIteration()
 
             if i % self.thin == 0 and i > self.burnin:
-                samples.append(self.freeze.freeze())
+                self.samples.append(self.freeze.freeze())
 
     def _sampleIteration(self):
 
@@ -83,8 +84,8 @@ class Sample(object):
             obj.__dict__[param] = sampler.sample(obj.__dict__[param])
 
     def save(self,dir):
-        freeze.save(self.samples,os.path.join(dir,'samples.json'))
-        freeze.save([self.startSample],os.path.join(dir,'startSample.json'))
+        self.freeze.save(self.samples,os.path.join(dir,'samples.json'))
+        self.freeze.save([self.startSample],os.path.join(dir,'startSample.json'))
 
 
 def main(_type=Sample):
@@ -101,7 +102,7 @@ def main(_type=Sample):
 
     parser.add_argument('-t',dest='thin',type=int,default=10)
     parser.add_argument('-n',dest='nsample',type=int,default=5000)
-    parser.add_argument('-b',dest='burnin',type=int,default=200)
+    parser.add_argument('-b',dest='burnin',type=int,default=0)
 
     args = parser.parse_args()
 
