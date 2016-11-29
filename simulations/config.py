@@ -9,6 +9,9 @@ class Configuration(object):
 
     def __init__(self,cdir,fname='config.cfg',randomize=False):
 
+        if not os.path.exists(cdir):
+            raise ValueError('directory %s does not exist!'%cdir)
+
         self.config = ConfigParser.ConfigParser()
         self.config.read(os.path.join(cdir,fname))
 
