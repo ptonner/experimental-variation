@@ -94,28 +94,29 @@ class Configuration(object):
 
             self.priors['functions'][i] = Prior(self.x,self.__dict__['k%d'%(i+1)],range(start,stahp))
 
-        if randomize:
-            self.model = Model(self.x,self.y,self.dm)
-
-            self.yKernel.sigma = self.sigmaYprior.rvs()
-            self.k1.sigma = self.sigmaPrior.rvs()
-            self.k1.lengthscale = self.lengthscalePrior.rvs()
-            self.k2.sigma = self.sigmaPrior.rvs()
-            self.k2.lengthscale = self.lengthscalePrior.rvs()
-
-            self.prior.sample(self.model,self.yKernel)
-            self.prior2.sample(self.model,self.yKernel)
-
     def get(self):
         kernels = [self.yKernel, self.k1]
         kernels += [self.__dict__['k%d'%(i+2)] for i in range(self.levels)]
 
         return self.x, self.dm.shape[1], self.dm, kernels, self.priors
 
+    def randomize(self):
+        self.model = Model(self.x,self.y,self.dm)
+
+        self.yKernel.sigma = self.priors['yKernel']['sigma'].rvs()
+
+        for i in range(self.levels+1):
+            k = "k%d"%(i+1)
+            for param in self.priors[k]:
+                self.__dict__[k].__dict__[param] = self.priors[k][param].rvs()
+
+        for f,prior in self.priors['functions'].iteritems():
+            prior.sample(self.model,self.yKernel)
+
     def buildDesignMatrix(self):
 
-
-        self.designs = []
+        # designs: (f,d) f functions by d designs
+        self.designs = None
         if self.design == 'mean':
             self.designs = np.ones((1,1))
         elif self.design == 'single-treatment':
