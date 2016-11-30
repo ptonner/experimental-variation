@@ -11,21 +11,32 @@ from config import Configuration
 
 class Sample(object):
 
-    def __init__(self,config,ds,run,nsample,thin,burnin):
+    def __init__(self,config,ds,run,nsample,thin,burnin,levels=-1):
         self.config = Configuration(config)
         self.config.randomize()
         self.run = run
         self.nsample = nsample
         self.thin = thin
         self.burnin = burnin
+        self.levels = levels
+
+        # default to using all levels
+        if self.levels == -1:
+            self.levels = self.config.levels
+
+        # how many functions to use
+        self.f = sum(self.config.nf[:self.levels+1])
 
         self.x, self.p, self.dm, self.kernels, self.priors = self.config.get()
         self.yKernel = self.kernels[0]
-        for i in range(self.config.levels+1):
+        for i in range(self.levels+1):
             k = 'k%d'%(i+1)
             self.__dict__[k] = self.kernels[i+1]
+        self.kernels = self.kernels[1:self.levels+1]
 
         self.y = pd.read_csv(os.path.join(config,ds,'data.csv')).values
+
+        self.dm = self.dm[:f,:]
 
         self.model = Model(self.x,self.y,self.dm)
 
@@ -50,7 +61,7 @@ class Sample(object):
                                     .2,5,logspace=True)
                             ))
 
-        for i in range(self.config.levels+1):
+        for i in range(self.levels+1):
             k = 'k%d'%(i+1)
 
             self.samplers.append((self.__dict__[k],'sigma',
@@ -104,12 +115,14 @@ def main(_type=Sample):
     parser.add_argument('-n',dest='nsample',type=int,default=5000)
     parser.add_argument('-b',dest='burnin',type=int,default=0)
 
+    parser.add_argument('-v',dest='levels',type=int,default=-1)
+
     args = parser.parse_args()
 
     if not args.run in os.listdir(os.path.join(args.configuration,args.label)):
         os.mkdir(os.path.join(args.configuration,args.label,args.run))
 
-    sample = _type(args.configuration,args.label,args.run,args.nsample,args.thin,args.burnin)
+    sample = _type(args.configuration,args.label,args.run,args.nsample,args.thin,args.burnin,args.levels)
     sample.sample()
     sample.save(os.path.join(args.configuration,args.label,args.run),)
 
