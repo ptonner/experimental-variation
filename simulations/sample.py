@@ -36,7 +36,7 @@ class Sample(object):
 
         self.y = pd.read_csv(os.path.join(config,ds,'data.csv')).values
 
-        self.dm = self.dm[:f,:]
+        self.dm = self.dm[:self.f,:]
 
         self.model = Model(self.x,self.y,self.dm)
 
@@ -89,6 +89,8 @@ class Sample(object):
     def _sampleIteration(self):
 
         for f,prior in self.priors['functions'].iteritems():
+            if f > self.levels:
+                continue
             prior.sample(self.model,self.yKernel)
 
         for obj, param, sampler in self.samplers:
