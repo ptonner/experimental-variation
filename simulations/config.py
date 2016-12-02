@@ -9,6 +9,8 @@ class Configuration(object):
 
     def __init__(self,cdir,fname='config.cfg',randomize=False):
 
+        # TODO: seperate nf and ndesigns, which are used incorrectly in non-mean design
+
         if not os.path.exists(cdir):
             raise ValueError('directory %s does not exist!'%cdir)
 
@@ -61,7 +63,7 @@ class Configuration(object):
 
         self.buildDesignMatrix()
 
-        self.x = np.linspace(-1,1)[:,None]
+        self.x = np.linspace(self.config.getfloat('main','xmin'),self.config.getfloat('main','xmax'))[:,None]
         self.y = np.zeros((self.x.shape[0],self.dm.shape[1]))
 
         self.priors = {'yKernel':{}, 'functions':{}, 'k1':{}}
@@ -171,6 +173,10 @@ class Configuration(object):
         self.setDefault('loc','1.0')
         self.setDefault('scale','1.0')
         self.setDefault('s','1.0')
+        self.setDefault('xmin','-1')
+        self.setDefault('xmax','1')
+        self.setDefault('slice-w','.2')
+        self.setDefault('slice-m','5')
 
     def _checkLevelConfig(self):
         """Check that sections are available matching the number of levels, add if needed."""
