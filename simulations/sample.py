@@ -32,7 +32,7 @@ class Sample(object):
         for i in range(self.levels+1):
             k = 'k%d'%(i+1)
             self.__dict__[k] = self.kernels[i+1]
-        self.kernels = self.kernels[1:self.levels+1]
+        self.kernels = self.kernels[1:self.levels+2]
 
         self.y = pd.read_csv(os.path.join(config,ds,'data.csv')).values
 
@@ -58,7 +58,7 @@ class Sample(object):
                                 Slice('ySigma',
                                     lambda x: self.model.dataLikelihood(self.yKernel,sigma=x),
                                     lambda x: self.priors['yKernel']['sigma'].logpdf(x),
-                                    .2,5,logspace=True)
+                                    self.config.config.getfloat('yKernel','slice-w'),self.config.config.getfloat('yKernel','slice-m'),logspace=True)
                             ))
 
         for i in range(self.levels+1):
@@ -68,14 +68,14 @@ class Sample(object):
                                     Slice('%s-sigma'%k,
                                         lambda x: self.priors['functions'][i].loglikelihood(self.model.beta,sigma=x),
                                         lambda x: self.priors[k]['sigma'].logpdf(x),
-                                        .2,5,logspace=True)
+                                        self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
                                 ))
 
             self.samplers.append((self.__dict__[k],'lengthscale',
                                     Slice('%s-lengthscale'%k,
                                         lambda x: self.priors['functions'][i].loglikelihood(self.model.beta,lengthscale=x),
                                         lambda x: self.priors[k]['lengthscale'].logpdf(x),
-                                        .2,5,logspace=True)
+                                        self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
                                 ))
 
     def sample(self):
