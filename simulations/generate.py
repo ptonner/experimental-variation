@@ -41,7 +41,7 @@ if __name__ == "__main__":
     model = Model(x,y,dm)
     model.beta = betaTrue
 
-    kwargs = {'k%d'%(i+1):kernels[i+1] for i in range(config.levels)}
+    kwargs = {'k%d'%(i+1):kernels[i+1] for i in range(config.levels+1)}
     freeze = Freezer(yKernel=kernels[0],model=model,**kwargs)
     trueSample = freeze.freeze()
     freeze.save([trueSample],os.path.join(args.configuration,args.label,'parameters-true.json'))
