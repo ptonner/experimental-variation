@@ -38,7 +38,9 @@ class Sample(object):
 
         self.dm = self.dm[:self.f,:]
 
+        # self.model = self.config.model
         self.model = Model(self.x,self.y,self.dm)
+        self.model.beta = self.config.model.beta[:,:self.f]
 
         self._buildSamplers()
 
@@ -87,14 +89,29 @@ class Sample(object):
                 self.samples.append(self.freeze.freeze())
 
     def _sampleIteration(self):
+        order = range(self.levels+1+len(self.samplers))
+        order = np.random.choice(order,len(order),replace=False)
+        # print order
 
-        for f,prior in self.priors['functions'].iteritems():
-            if f > self.levels:
-                continue
-            prior.sample(self.model,self.yKernel)
+        for o in order:
+            if o <= self.levels:
+                # print 'function %d' %o
+                prior = self.priors['functions'][o]
+                prior.sample(self.model,self.yKernel)
+            else:
+                obj, param, sampler = self.samplers[o-self.levels-1]
+                obj.__dict__[param] = sampler.sample(obj.__dict__[param])
+                # print 'sampler %d, %s:%s' % (o-self.levels-1,obj,param)
 
-        for obj, param, sampler in self.samplers:
-            obj.__dict__[param] = sampler.sample(obj.__dict__[param])
+        # print
+
+        # for f,prior in self.priors['functions'].iteritems():
+        #     if f > self.levels:
+        #         continue
+        #     prior.sample(self.model,self.yKernel)
+        #
+        # for obj, param, sampler in self.samplers:
+        #     obj.__dict__[param] = sampler.sample(obj.__dict__[param])
 
     def save(self,dir):
         self.freeze.save(self.samples,os.path.join(dir,'samples.json'))
