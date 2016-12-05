@@ -5,7 +5,10 @@ for p in `seq 5 5 30`; do
         echo $p, $i, $j;
         for n in {1..10}; do
           # echo "python generate.py -l ds$n single-level/$p-$i-$j"
-          sbatch --array=0-10%1 python sample.py -l ds$n -r run$SLURM_ARRAY_TASK_ID single-level/$p-$i-$j 2> /dev/null;
+          #python sample.py -l ds$n -r run$SLURM_ARRAY_TASK_ID single-level/$p-$i-$j 2> /dev/null;
+
+          sbatch --array=0-10%1 sample-slurm-batch.sh single-level/$p-$i-$j  ds$n run$SLURM_ARRAY_TASK_ID -1
+          # sbatch --array=0-10%1 sample-slurm-batch.sh single-level/$p-$i-$j  ds$n run$SLURM_ARRAY_TASK_ID -1
         done
     done
   done
