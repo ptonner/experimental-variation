@@ -108,6 +108,9 @@ class Configuration(object):
     def randomize(self):
         self.model = Model(self.x,self.y,self.dm)
 
+        for f,prior in self.priors['functions'].iteritems():
+            prior.sample(self.model,self.yKernel)
+
         self.yKernel.sigma = self.priors['yKernel']['sigma'].rvs()
 
         for i in range(self.levels+1):
@@ -115,8 +118,7 @@ class Configuration(object):
             for param in self.priors[k]:
                 self.__dict__[k].__dict__[param] = self.priors[k][param].rvs()
 
-        for f,prior in self.priors['functions'].iteritems():
-            prior.sample(self.model,self.yKernel)
+
 
     def buildDesignMatrix(self):
 
