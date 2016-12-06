@@ -142,7 +142,12 @@ def main(_type=Sample):
         os.mkdir(os.path.join(args.configuration,args.label,args.run))
 
     sample = _type(args.configuration,args.label,args.run,args.nsample,args.thin,args.burnin,args.levels)
-    sample.sample()
+
+    try:
+        sample.sample()
+    except:
+        pass
+        
     sample.save(os.path.join(args.configuration,args.label,args.run),)
 
 
