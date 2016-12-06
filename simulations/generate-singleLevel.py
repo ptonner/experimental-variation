@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     config = ConfigParser.ConfigParser()
     config.read('single-level/base.cfg')
-    config.set("main",'p',str(args.p))
+    config.set("main",'nrep',str(args.p))
     config.set("k1",'sigma',str(args.theta1))
     config.set("k2",'sigma',str((1-args.theta1)*args.theta2))
     config.set("yKernel",'sigma',str((1-args.theta1)*(1-args.theta2)))
