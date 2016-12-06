@@ -27,6 +27,10 @@ if __name__ == "__main__":
     if args.label != "" and not args.label in os.listdir(args.configuration):
         os.mkdir(os.path.join(args.configuration,args.label))
 
+    if 'data.csv' in os.path.join(args.configuration,args.label):
+        raise ValueError("dataset already exists at %s!"%
+                            os.path.join(args.configuration,args.label))
+
     betaTrue = np.zeros((x.shape[0],dm.shape[0]))
 
     for f in range(config.f):
