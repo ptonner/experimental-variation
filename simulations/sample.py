@@ -89,7 +89,7 @@ class Sample(object):
 
     def sample(self):
 
-        for i in range(self.nsample):
+        for i in range(len(self.samples),self.nsample):
             self._sampleIteration()
 
             if i % self.thin == 0 and i > self.burnin:
