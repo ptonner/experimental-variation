@@ -36,22 +36,38 @@ class Analysis(object):
         if not self.checkRun(ds,r):
             return None,None
 
-        samples = Analysis.loadSamples(os.path.join(self.configDir,ds,r,'samples.json'))
+        samples = None
+        try:
+            samples = Analysis.loadSamples(os.path.join(self.configDir,ds,r,'samples.json'),self.burnin)
+        except:
+            pass
+            
         oracle = Analysis.loadSamples(os.path.join(self.configDir,ds,'parameters-true.json'))[0]
 
         return samples,oracle
 
     def check(self,):
+
+        allnames,allchecks = [],[]
+
         for ds in self.datasets:
             # print ds
             sys.stdout.write('%s' % ds)
 
             names,checks = self.checkDataset(ds)
+
+            allnames.extend(names)
+            allchecks.extend(checks)
+
             checks = np.array(checks)
             checks = pd.DataFrame(checks,index=names)
             checks.to_csv(os.path.join(self.configDir,ds,'checks.csv'),index=True,)
 
             print
+
+        checks = np.array(allchecks)
+        checks = pd.DataFrame(checks,index=allnames)
+        checks.to_csv(os.path.join(self.configDir,'checks.csv'),index=True,)
 
     def checkDataset(self,ds):
         runs = self.runs[ds]
@@ -203,7 +219,14 @@ class Analysis(object):
         # print 'finished'
 
     def checkRun(self,ds,r):
-        return 'samples.json' in os.listdir(os.path.join(self.configDir,ds,r,))
+        if 'samples.json' in os.listdir(os.path.join(self.configDir,ds,r,)):
+            try:
+                Analysis.loadSamples(os.path.join(self.configDir,ds,r,'samples.json'))
+            except:
+                return False
+        else:
+            return False
+        return True
 
 if __name__ == "__main__":
     import argparse
