@@ -8,6 +8,7 @@ from gpmultipy.sampler.slice import Slice
 from gpmultipy import Model
 
 from config import Configuration
+from analysis import Analysis
 
 class Sample(object):
 
@@ -52,6 +53,12 @@ class Sample(object):
         self.freeze = Freezer(model=self.model,**kwargs)
         self.startSample = self.freeze.freeze()
         self.samples = []
+
+    def load(self,f):
+        samples = Analysis.loadSamples(f)
+        self.startSample = samples[0]
+        self.samples = samples
+        self.freeze.push(**self.samples[-1])
 
     def _buildSamplers(self):
         self.samplers = []
@@ -133,6 +140,7 @@ def main(_type=Sample):
     parser.add_argument('-t',dest='thin',type=int,default=10)
     parser.add_argument('-n',dest='nsample',type=int,default=5000)
     parser.add_argument('-b',dest='burnin',type=int,default=0)
+    parser.add_argument('--chain',dest='useChain',action='store_true',help='use existing chain, if possible')
 
     parser.add_argument('-v',dest='levels',type=int,default=-1)
 
@@ -143,11 +151,14 @@ def main(_type=Sample):
 
     sample = _type(args.configuration,args.label,args.run,args.nsample,args.thin,args.burnin,args.levels)
 
+    if args.useChain and 'samples.json' in os.listdir(os.path.join(args.configuration,args.label,args.run)):
+        sample.load(os.path.join(args.configuration,args.label,args.run,'samples.json'))
+
     try:
         sample.sample()
     except:
         pass
-        
+
     sample.save(os.path.join(args.configuration,args.label,args.run),)
 
 
