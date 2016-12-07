@@ -7,15 +7,16 @@ import matplotlib.pyplot as plt
 class Analysis(object):
 
     @staticmethod
-    def loadSamples(path):
+    def loadSamples(path,burnin=0):
         samples = json.load(open(path))
         for s in samples:
             s['model']['beta'] = np.array(s['model']['beta'])
-        return samples
+        return samples[burnin:]
 
-    def __init__(self,config):
+    def __init__(self,config,burnin=0):
         self.configDir = config
         self.config = Configuration(config)
+        self.burnin = burnin
 
         self.datasets = os.listdir(self.configDir)
         self.datasets = filter(lambda x: x[:2]=='ds',self.datasets)
@@ -91,6 +92,9 @@ class Analysis(object):
         return chex
 
     def plotAll(self):
+        if not 'figures' in os.listdir(os.path.join(self.configDir)):
+            os.mkdir(os.path.join(self.configDir,'figures'))
+
         for ds in self.datasets:
             self.plotDataset(ds)
 
@@ -107,13 +111,13 @@ class Analysis(object):
             else:
                 self.plotRun(ds,r)
 
-                break # REMOVE
+                #break # REMOVE
 
     def plotRun(self,ds,r,levels=-1,ncol=5,size=4):
         if not self.checkRun(ds,r):
             return
 
-        samples = Analysis.loadSamples(os.path.join(self.configDir,ds,r,'samples.json'))
+        samples = Analysis.loadSamples(os.path.join(self.configDir,ds,r,'samples.json'),self.burnin)
         oracle = Analysis.loadSamples(os.path.join(self.configDir,ds,'parameters-true.json'))[0]
 
         # self.plotFunctions(samples,oracle)
@@ -165,7 +169,7 @@ class Analysis(object):
         # these are the replicate fxns for this design
         fxns = range(offset+ind*step,offset+(ind+1)*step)
 
-        print designInd, self.config.nf, self.config.designs.shape, self.config.dm.shape, self.config.replicates.shape,fxns,ind
+        #print designInd, self.config.nf, self.config.designs.shape, self.config.dm.shape, self.config.replicates.shape,fxns,ind
 
         # max width of figure
         width = self.config.cumnreps[levels-1]
@@ -196,7 +200,7 @@ class Analysis(object):
 
                 interval.plot()
                 plt.plot(oracle['model']['beta'][:,find],c='r',alpha=1)
-        print 'finished'
+        # print 'finished'
 
     def checkRun(self,ds,r):
         return 'samples.json' in os.listdir(os.path.join(self.configDir,ds,r,))
@@ -209,12 +213,13 @@ if __name__ == "__main__":
     parser.add_argument('configuration', help='directory containing configuration file')
     parser.add_argument('-p',dest="plot",action="store_true",default=False,help='plot results')
     parser.add_argument('-c',dest="check",action="store_true",default=False,help='check intervals')
+    parser.add_argument('-b',dest="burnin",action="store",type=int,default=False,help='burnin of samples')
 
     args = parser.parse_args()
 
     # print args.plot,args.check
 
-    analysis = Analysis(args.configuration)
+    analysis = Analysis(args.configuration,args.burnin)
 
     if args.plot:
         analysis.plotAll()
