@@ -12,14 +12,19 @@ from analysis import Analysis
 
 class Sample(object):
 
-    def __init__(self,config,ds,run,nsample,thin,burnin,levels=-1):
+    def __init__(self,config,ds,run,nsample,thin,burnin,levels=-1,randomize=True,randomSamplerOrder=True):
+
         self.config = Configuration(config)
-        self.config.randomize()
+
+        if randomize:
+            self.config.randomize()
+
         self.run = run
         self.nsample = nsample
         self.thin = thin
         self.burnin = burnin
         self.levels = levels
+        self.randomSamplerOrder = randomSamplerOrder
 
         # default to using all levels
         if self.levels == -1:
@@ -41,7 +46,9 @@ class Sample(object):
 
         # self.model = self.config.model
         self.model = Model(self.x,self.y,self.dm)
-        self.model.beta = self.config.model.beta[:,:self.f]
+
+        if randomize:
+            self.model.beta = self.config.model.beta[:,:self.f]
 
         self._buildSamplers()
 
@@ -97,18 +104,17 @@ class Sample(object):
 
     def _sampleIteration(self):
         order = range(self.levels+1+len(self.samplers))
-        order = np.random.choice(order,len(order),replace=False)
-        # print order
+
+        if self.randomSamplerOrder:
+            order = np.random.choice(order,len(order),replace=False)
 
         for o in order:
             if o <= self.levels:
-                # print 'function %d' %o
                 prior = self.priors['functions'][o]
                 prior.sample(self.model,self.yKernel)
             else:
                 obj, param, sampler = self.samplers[o-self.levels-1]
                 obj.__dict__[param] = sampler.sample(obj.__dict__[param])
-                # print 'sampler %d, %s:%s' % (o-self.levels-1,obj,param)
 
         # print
 
@@ -141,6 +147,8 @@ def main(_type=Sample):
     parser.add_argument('-n',dest='nsample',type=int,default=5000)
     parser.add_argument('-b',dest='burnin',type=int,default=0)
     parser.add_argument('--chain',dest='useChain',action='store_true',help='use existing chain, if possible')
+    parser.add_argument('--randomize',dest='randomize',action='store_true',help='randomize starting parameters')
+    parser.add_argument('--randomSamplerOrder',dest='randomSamplerOrder',action='store_true',help='randomize parameter sampling order')
 
     parser.add_argument('-v',dest='levels',type=int,default=-1)
 
@@ -149,7 +157,7 @@ def main(_type=Sample):
     if not args.run in os.listdir(os.path.join(args.configuration,args.label)):
         os.mkdir(os.path.join(args.configuration,args.label,args.run))
 
-    sample = _type(args.configuration,args.label,args.run,args.nsample,args.thin,args.burnin,args.levels)
+    sample = _type(args.configuration,args.label,args.run,args.nsample,args.thin,args.burnin,args.levels,args.randomize,args.randomSamplerOrder)
 
     if args.useChain and 'samples.json' in os.listdir(os.path.join(args.configuration,args.label,args.run)):
         sample.load(os.path.join(args.configuration,args.label,args.run,'samples.json'))
