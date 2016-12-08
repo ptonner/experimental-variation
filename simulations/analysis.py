@@ -78,7 +78,7 @@ class Analysis(object):
             print
 
         checks = np.array(allchecks)
-        checks = pd.DataFrame(checks,index=allnames)
+        checks = pd.DataFrame(checks,index=pd.MultiIndex.from_tuples(allnames),names=['dataset','run'])
         checks.to_csv(os.path.join(self.configDir,'checks%s.csv'%s),index=True,)
 
     def checkDataset(self,ds):
