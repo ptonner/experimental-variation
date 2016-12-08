@@ -82,15 +82,15 @@ class Sample(object):
 
             self.samplers.append((self.__dict__[k],'sigma',
                                     Slice('%s-sigma'%k,
-                                        lambda x: self.priors['functions'][i].loglikelihood(self.model.beta,sigma=x),
-                                        lambda x: self.priors[k]['sigma'].logpdf(x),
+                                        lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,sigma=x),
+                                        lambda x, i=i, k=k: self.priors[k]['sigma'].logpdf(x),
                                         self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
                                 ))
 
             self.samplers.append((self.__dict__[k],'lengthscale',
                                     Slice('%s-lengthscale'%k,
-                                        lambda x: self.priors['functions'][i].loglikelihood(self.model.beta,lengthscale=x),
-                                        lambda x: self.priors[k]['lengthscale'].logpdf(x),
+                                        lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,lengthscale=x),
+                                        lambda x, i=i, k=k: self.priors[k]['lengthscale'].logpdf(x),
                                         self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
                                 ))
 
