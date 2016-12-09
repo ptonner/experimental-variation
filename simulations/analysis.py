@@ -65,20 +65,20 @@ class Analysis(object):
             sys.stdout.write('%s' % ds)
 
             names,checks = self.checkDataset(ds)
-
-            checks = np.array(checks)
-            checks = pd.DataFrame(checks,index=names)
-            checks.to_csv(os.path.join(self.configDir,ds,'checks%s.csv'%s),index=True,)
-
             names = zip([ds]*len(names),names)
 
             allnames.extend(names)
             allchecks.extend(checks)
 
+            checks = np.array(checks)
+            checks = pd.DataFrame(checks,index=names)
+            checks.to_csv(os.path.join(self.configDir,ds,'checks%s.csv'%s),index=True,)
+
             print
 
         checks = np.array(allchecks)
-        checks = pd.DataFrame(checks,index=pd.MultiIndex.from_tuples(allnames),names=['dataset','run'])
+        checks = pd.DataFrame(checks,index=pd.MultiIndex.from_tuples(allnames,names=['dataset','run']))
+        # checks = pd.DataFrame(checks)
         checks.to_csv(os.path.join(self.configDir,'checks%s.csv'%s),index=True,)
 
     def checkDataset(self,ds):
