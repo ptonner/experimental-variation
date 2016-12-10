@@ -4,7 +4,7 @@ import pandas as pd
 
 from gpmultipy.kernel import RBF, White
 from gpmultipy.freeze import Freezer
-from gpmultipy.sampler.slice import Slice
+from gpmultipy.sampler.slice import PriorSlice, Slice
 from gpmultipy import Model
 
 from config import Configuration
@@ -81,18 +81,36 @@ class Sample(object):
             k = 'k%d'%(i+1)
 
             self.samplers.append((self.__dict__[k],'sigma',
-                                    Slice('%s-sigma'%k,
-                                        lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,sigma=x),
-                                        lambda x, i=i, k=k: self.priors[k]['sigma'].logpdf(x),
-                                        self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
+                                    PriorSlice('%s-sigma'%k, self.model,
+                                        self.priors['functions'][i], self.priors[k]['sigma'],
+                                        'sigma',
+                                        self.config.config.getfloat(k,'slice-w'),
+                                        self.config.config.getfloat(k,'slice-m'),
+                                        logspace=True)
                                 ))
 
             self.samplers.append((self.__dict__[k],'lengthscale',
-                                    Slice('%s-lengthscale'%k,
-                                        lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,lengthscale=x),
-                                        lambda x, i=i, k=k: self.priors[k]['lengthscale'].logpdf(x),
-                                        self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
+                                    PriorSlice('%s-lengthscale'%k, self.model,
+                                        self.priors['functions'][i], self.priors[k]['lengthscale'],
+                                        'lengthscale',
+                                        self.config.config.getfloat(k,'slice-w'),
+                                        self.config.config.getfloat(k,'slice-m'),
+                                        logspace=True)
                                 ))
+
+            # self.samplers.append((self.__dict__[k],'sigma',
+            #                         Slice('%s-sigma'%k,
+            #                             lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,sigma=x),
+            #                             lambda x, i=i, k=k: self.priors[k]['sigma'].logpdf(x),
+            #                             self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
+            #                     ))
+            #
+            # self.samplers.append((self.__dict__[k],'lengthscale',
+            #                         Slice('%s-lengthscale'%k,
+            #                             lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,lengthscale=x),
+            #                             lambda x, i=i, k=k: self.priors[k]['lengthscale'].logpdf(x),
+            #                             self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
+            #                     ))
 
     def sample(self):
 
