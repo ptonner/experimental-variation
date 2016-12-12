@@ -17,11 +17,12 @@ class Analysis(object):
             s['model']['beta'] = np.array(s['model']['beta'])
         return samples[burnin:]
 
-    def __init__(self,config,burnin=0,long=False):
+    def __init__(self,config,burnin=0,long=False,label=None):
         self.configDir = config
         self.config = Configuration(config)
         self.burnin = burnin
         self.long = long
+        self.label = label
 
         self.datasets = os.listdir(self.configDir)
         self.datasets = filter(lambda x: x[:2]=='ds',self.datasets)
@@ -32,6 +33,10 @@ class Analysis(object):
         for ds in self.datasets:
             runs = os.listdir(os.path.join(self.configDir,ds))
             runs = filter(lambda x: x[:3]=='run',runs)
+
+            if not label is None:
+                runs = filter(lambda x: x[-len(label):]==label,runs)
+
             runs.sort()
 
             self.runs[ds] = runs
@@ -55,6 +60,8 @@ class Analysis(object):
         s = ''
         if self.long:
             s = '_burnin%d'%self.burnin
+        if not self.label is None:
+            s += '_%s'%self.label
 
         return s
 
@@ -256,10 +263,11 @@ if __name__ == "__main__":
     parser.add_argument('-c',dest="check",action="store_true",default=False,help='check intervals')
     parser.add_argument('-l',dest="long",action="store_true",default=False,help='long form in save targets')
     parser.add_argument('-b',dest="burnin",action="store",type=int,default=False,help='burnin of samples')
+    parser.add_argument('-a',dest="label",action="store",type=str,default=None,help='label of runs')
 
     args = parser.parse_args()
 
-    analysis = Analysis(args.configuration,args.burnin,args.long)
+    analysis = Analysis(args.configuration,args.burnin,args.long,args.label)
 
     if args.plot:
         analysis.plotAll()
