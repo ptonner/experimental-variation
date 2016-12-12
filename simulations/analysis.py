@@ -109,7 +109,7 @@ class Analysis(object):
     def checkDatasetRun(self,ds,r):
         samples,oracle = self.loadDatasetRun(ds,r)
 
-        if samples is None or oracle is None:
+        if samples is None or oracle is None or len(samples)==0:
             return
 
         nf = samples[0]['model']['beta'].shape[1]
