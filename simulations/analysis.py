@@ -1,3 +1,7 @@
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
 import os, gpmultipy, json, sys
 from config import Configuration
 import pandas as pd
@@ -105,7 +109,7 @@ class Analysis(object):
     def checkDatasetRun(self,ds,r):
         samples,oracle = self.loadDatasetRun(ds,r)
 
-        if samples is None or oracle is None:
+        if samples is None or oracle is None or len(samples)==0:
             return
 
         nf = samples[0]['model']['beta'].shape[1]
