@@ -141,6 +141,8 @@ class Analysis(object):
         runs = self.runs[ds]
         data = self.data[ds]
 
+        self.plotData(ds,data)
+
         for r in runs:
             # print ds,r
 
@@ -151,6 +153,17 @@ class Analysis(object):
                 self.plotRun(ds,r)
 
                 #break # REMOVE
+
+    def plotData(self,ds,data):
+        oracle = Analysis.loadSamples(os.path.join(self.configDir,ds,'parameters-true.json'))[0]
+
+        # print data
+
+        plt.plot(data,c='k',alpha=.1)
+        plt.plot(oracle['model']['beta'][:,0])
+        plt.ylim(data.min(),data.max())
+        plt.savefig(os.path.join(self.configDir,'figures',"%s-data.pdf"%(ds)))
+        plt.close()
 
     def plotRun(self,ds,r,levels=-1,ncol=5,size=4):
         if not self.checkRun(ds,r):

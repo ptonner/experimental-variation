@@ -25,6 +25,8 @@ class Configuration(object):
         #experimental design
         self.design = self.config.get('main','design')
 
+        self.intergrateBottom = self.config.getboolean('main','integrate-bottom')
+
         self.nf = []
         if self.design == 'mean':
             self.nf.append(1)
@@ -55,15 +57,24 @@ class Configuration(object):
             self.nreps = [self.config.getint('level%d'%(i+1),'nrep') for i in range(self.levels)]
             self.p = np.prod(self.nreps)
 
+        # don't build functions/priors for bottom level if integrating out
+        if self.intergrateBottom:
+            stahp = self.levels
+        else:
+            stahp = self.levels+1
+
         # add the number of functions from replicate structure
-        self.nf += [self.nf[0]*np.product(self.nreps[:i]) for i in range(1,self.levels+1)]
+        self.nf += [self.nf[0]*np.product(self.nreps[:i]) for i in range(1,stahp)]
         self.cumnf = np.cumsum(self.nf)
         self.cumnreps = np.cumprod(self.nreps)
         self.f = sum(self.nf)
 
         self.buildDesignMatrix()
 
-        self.x = np.linspace(self.config.getfloat('main','xmin'),self.config.getfloat('main','xmax'))[:,None]
+        self.x = np.linspace(self.config.getfloat('main','xmin'),
+                             self.config.getfloat('main','xmax'),
+                             self.config.getint('main','n'))[:,None]
+                             
         self.y = np.zeros((self.x.shape[0],self.dm.shape[1]))
 
         self.priors = {'yKernel':{}, 'functions':{}, 'k1':{}}
@@ -93,11 +104,11 @@ class Configuration(object):
 
         # self.priors['functions'][0] = Prior(self.x,self.k1,[0])
 
-        for i in range(self.levels+1):
+        for i in range(stahp):
             start = sum(self.nf[:i])
-            stahp = start+self.nf[i]
+            stahp2 = start+self.nf[i]
 
-            self.priors['functions'][i] = Prior(self.x,self.__dict__['k%d'%(i+1)],range(start,stahp))
+            self.priors['functions'][i] = Prior(self.x,self.__dict__['k%d'%(i+1)],range(start,stahp2))
 
     def get(self):
         kernels = [self.yKernel, self.k1]
@@ -163,6 +174,7 @@ class Configuration(object):
     def _setDefaults(self):
 
         self.setDefault("levels",'1')
+        self.setDefault("n",'50')
         self.setDefault("design",'mean')
         self.setDefault("treatments",'2')
         self.setDefault("factors",'2')
@@ -179,6 +191,9 @@ class Configuration(object):
         self.setDefault('xmax','1')
         self.setDefault('slice-w','.2')
         self.setDefault('slice-m','5')
+
+        # toggle whether to integrate out the lowest level of hierarchy
+        self.setDefault('integrate-bottom','False')
 
     def _checkLevelConfig(self):
         """Check that sections are available matching the number of levels, add if needed."""
