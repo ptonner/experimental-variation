@@ -14,7 +14,7 @@ class Sample(object):
 
     def __init__(self,config,ds,run,nsample,thin,burnin,levels=-1,randomize=True,randomSamplerOrder=True):
 
-        self.config = Configuration(config)
+        self.config = Configuration(config,randomizePriors=randomSamplerOrder)
 
         if randomize:
             self.config.randomize()
@@ -180,10 +180,12 @@ def main(_type=Sample):
     if args.useChain and 'samples.json' in os.listdir(os.path.join(args.configuration,args.label,args.run)):
         sample.load(os.path.join(args.configuration,args.label,args.run,'samples.json'))
 
-    try:
-        sample.sample()
-    except:
-        pass
+    # try:
+    #
+    # except e2, e:
+    #     print e2,e
+
+    sample.sample()
 
     sample.save(os.path.join(args.configuration,args.label,args.run),)
 
