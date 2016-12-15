@@ -7,7 +7,7 @@ from gpmultipy import Prior, Model
 
 class Configuration(object):
 
-    def __init__(self,cdir,fname='config.cfg',randomize=False):
+    def __init__(self,cdir,fname='config.cfg',randomize=False,randomizePriors=False):
 
         # TODO: seperate nf and ndesigns, which are used incorrectly in non-mean design
 
@@ -74,7 +74,7 @@ class Configuration(object):
         self.x = np.linspace(self.config.getfloat('main','xmin'),
                              self.config.getfloat('main','xmax'),
                              self.config.getint('main','n'))[:,None]
-                             
+
         self.y = np.zeros((self.x.shape[0],self.dm.shape[1]))
 
         self.priors = {'yKernel':{}, 'functions':{}, 'k1':{}}
@@ -108,7 +108,7 @@ class Configuration(object):
             start = sum(self.nf[:i])
             stahp2 = start+self.nf[i]
 
-            self.priors['functions'][i] = Prior(self.x,self.__dict__['k%d'%(i+1)],range(start,stahp2))
+            self.priors['functions'][i] = Prior(self.x,self.__dict__['k%d'%(i+1)],range(start,stahp2),randomizeOrder=randomizePriors)
 
     def get(self):
         kernels = [self.yKernel, self.k1]
