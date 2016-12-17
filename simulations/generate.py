@@ -40,7 +40,10 @@ if __name__ == "__main__":
         kernel = kernels[ind]
         betaTrue[:,f] = scipy.stats.multivariate_normal.rvs(np.zeros(x.shape[0]),kernel.K(x))
 
-    y = np.dot(betaTrue,dm) + scipy.stats.multivariate_normal.rvs(np.zeros(x.shape[0]),kernels[0].K(x),size=p).reshape((x.shape[0],p))
+    # y = np.dot(betaTrue,dm) + scipy.stats.multivariate_normal.rvs(np.zeros(x.shape[0]),kernels[0].K(x),size=p).reshape((x.shape[0],p))
+    y = np.zeros((x.shape[0],dm.shape[1]))
+    for i in range(dm.shape[1]):
+        y[:,i] = np.dot(betaTrue,dm[:,i]) + scipy.stats.multivariate_normal.rvs(np.zeros(x.shape[0]),kernels[0].K(x))
 
     model = Model(x,y,dm)
     model.beta = betaTrue
