@@ -1,7 +1,7 @@
 import ConfigParser, os, scipy, patsy
 import numpy as np
 
-from gpmultipy.kernel import RBF, White
+from gpmultipy.kernel import RBF, White, Hierarchical
 from gpmultipy import Prior, Model
 
 
@@ -24,6 +24,9 @@ class Configuration(object):
 
         #experimental design
         self.design = self.config.get('main','design')
+
+        #marginalize out hierarchy
+        self.hierarchy = self.config.getboolean('main','hierarchy')
 
         self.intergrateBottom = self.config.getboolean('main','integrate-bottom')
 
@@ -63,6 +66,11 @@ class Configuration(object):
         else:
             stahp = self.levels+1
 
+        #marginalize only use actual functions
+        if self.hierarchy:
+            stahp = 1
+            self.p = self.nreps[0]
+
         # add the number of functions from replicate structure
         self.nf += [self.nf[0]*np.product(self.nreps[:i]) for i in range(1,stahp)]
         self.cumnf = np.cumsum(self.nf)
@@ -71,9 +79,31 @@ class Configuration(object):
 
         self.buildDesignMatrix()
 
-        self.x = np.linspace(self.config.getfloat('main','xmin'),
-                             self.config.getfloat('main','xmax'),
-                             self.config.getint('main','n'))[:,None]
+        if self.hierarchy:
+
+            if self.levels > 1:
+                repeat = np.product(self.nreps[1:])
+            else:
+                repeat = 1
+
+            xactual = np.linspace(self.config.getfloat('main','xmin'),
+                                 self.config.getfloat('main','xmax'),
+                                 self.config.getint('main','n'))
+
+            self.x = np.zeros((xactual.shape[0]*repeat,2+self.levels))
+            self.x[:,0] = np.repeat(xactual[:,None],repeat,1).ravel(1)
+
+            for i in range(1,self.levels):
+                step = self.x.shape[0]/np.product(self.nreps[1:i+1])
+                for j in range(self.cumnreps[i]):
+                    self.x[j*step:(j+1)*step,i+1] = j
+
+            self.xactual = xactual
+
+        else:
+            self.x = np.linspace(self.config.getfloat('main','xmin'),
+                                 self.config.getfloat('main','xmax'),
+                                 self.config.getint('main','n'))[:,None]
 
         self.y = np.zeros((self.x.shape[0],self.dm.shape[1]))
 
@@ -159,12 +189,13 @@ class Configuration(object):
         self.dm = np.zeros((self.f,self.p*self.nf[0]))
         self.dm[:self.nf[0],:] = self.designs.repeat(self.p,1)
 
-        offset = self.nf[0]
-        for i in range(self.nf[0]):
-            col = i*self.p
-            row = i*self.replicates.shape[0] + offset
+        if not self.hierarchy:
+            offset = self.nf[0]
+            for i in range(self.nf[0]):
+                col = i*self.p
+                row = i*self.replicates.shape[0] + offset
 
-            self.dm[row:row+self.replicates.shape[0],col:col+self.replicates.shape[1]] = self.replicates
+                self.dm[row:row+self.replicates.shape[0],col:col+self.replicates.shape[1]] = self.replicates
 
     def setDefault(self,name,value):
 
@@ -191,6 +222,7 @@ class Configuration(object):
         self.setDefault('xmax','1')
         self.setDefault('slice-w','.2')
         self.setDefault('slice-m','5')
+        self.setDefault('hierarchy','False')
 
         # toggle whether to integrate out the lowest level of hierarchy
         self.setDefault('integrate-bottom','False')
@@ -209,9 +241,21 @@ class Configuration(object):
                 self.config.add_section("level%d"%(i+1))
 
     def _buildKernels(self,):
-        self.yKernel = White(1,self.config.getfloat('yKernel','sigma'))
         self.k1 = RBF(1,self.config.getfloat('k1','sigma'),self.config.getfloat('k1','lengthscale'))
 
-        for i in range(self.levels):
-            k = 'k%d'%(i+2)
-            self.__dict__[k] = RBF(1,self.config.getfloat(k,'sigma'),self.config.getfloat(k,'lengthscale'))
+        if not self.hierarchy:
+            self.yKernel = White(1,self.config.getfloat('yKernel','sigma'))
+
+            for i in range(self.levels):
+                k = 'k%d'%(i+2)
+                self.__dict__[k] = RBF(1,self.config.getfloat(k,'sigma'),self.config.getfloat(k,'lengthscale'))
+        else:
+            args = []
+            for i in range(self.levels):
+                k = 'k%d'%(i+2)
+                args.append(RBF(1,self.config.getfloat(k,'sigma'),self.config.getfloat(k,'lengthscale')))
+                self.__dict__[k] = args[-1]
+
+            args.append(White(1,self.config.getfloat('yKernel','sigma')))
+
+            self.yKernel = Hierarchical(*args)

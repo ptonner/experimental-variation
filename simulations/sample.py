@@ -70,47 +70,77 @@ class Sample(object):
     def _buildSamplers(self):
         self.samplers = []
 
-        self.samplers.append((self.yKernel,'sigma',
-                                Slice('ySigma',
-                                    lambda x: self.model.dataLikelihood(self.yKernel,sigma=x),
-                                    lambda x: self.priors['yKernel']['sigma'].logpdf(x),
-                                    self.config.config.getfloat('yKernel','slice-w'),self.config.config.getfloat('yKernel','slice-m'),logspace=True)
-                            ))
+        if self.config.hierarchy:
 
-        for i in range(self.levels+1):
-            k = 'k%d'%(i+1)
+            self.samplers.append((self.yKernel.__dict__['k%d'%(self.config.levels+1)],'sigma',
+                                    Slice('ySigma',
+                                        lambda x: self.model.dataLikelihood(self.yKernel,**{'k%d_sigma'%(self.config.levels+1):x}),
+                                        lambda x: self.priors['yKernel']['sigma'].logpdf(x),
+                                        self.config.config.getfloat('yKernel','slice-w'),self.config.config.getfloat('yKernel','slice-m'),logspace=True)
+                                ))
 
-            self.samplers.append((self.__dict__[k],'sigma',
-                                    PriorSlice('%s-sigma'%k, self.model,
-                                        self.priors['functions'][i], self.priors[k]['sigma'],
+            for i in range(self.levels):
+                self.samplers.append((self.yKernel.__dict__['k%d'%(i+1)],'sigma',
+                                        Slice('sigma',
+                                            lambda x,i=i: self.model.dataLikelihood(self.yKernel,**{'k%d_sigma'%i:x}),
+                                            lambda x: self.priors['k%d'%(i+1)]['sigma'].logpdf(x),
+                                            self.config.config.getfloat('k%d'%(i+1),'slice-w'),self.config.config.getfloat('k%d'%(i+1),'slice-m'),logspace=True)
+                                    ))
+
+                self.samplers.append((self.yKernel.__dict__['k%d'%(i+1)],'lengthscale',
+                                        Slice('lengthscale',
+                                            lambda x,i=i: self.model.dataLikelihood(self.yKernel,**{'k%d_lengthscale'%i:x}),
+                                            lambda x: self.priors['k%d'%(i+1)]['lengthscale'].logpdf(x),
+                                            self.config.config.getfloat('k%d'%(i+1),'slice-w'),self.config.config.getfloat('k%d'%(i+1),'slice-m'),logspace=True)
+                                    ))
+
+            self.samplers.append((self.k1,'sigma',
+                                    PriorSlice('k1-sigma', self.model,
+                                        self.priors['functions'][0], self.priors['k1']['sigma'],
                                         'sigma',
-                                        self.config.config.getfloat(k,'slice-w'),
-                                        self.config.config.getfloat(k,'slice-m'),
+                                        self.config.config.getfloat('k1','slice-w'),
+                                        self.config.config.getfloat('k1','slice-m'),
                                         logspace=True)
                                 ))
 
-            self.samplers.append((self.__dict__[k],'lengthscale',
-                                    PriorSlice('%s-lengthscale'%k, self.model,
-                                        self.priors['functions'][i], self.priors[k]['lengthscale'],
+            self.samplers.append((self.k1,'lengthscale',
+                                    PriorSlice('k1-lengthscale', self.model,
+                                        self.priors['functions'][0], self.priors['k1']['lengthscale'],
                                         'lengthscale',
-                                        self.config.config.getfloat(k,'slice-w'),
-                                        self.config.config.getfloat(k,'slice-m'),
+                                        self.config.config.getfloat('k1','slice-w'),
+                                        self.config.config.getfloat('k1','slice-m'),
                                         logspace=True)
                                 ))
 
-            # self.samplers.append((self.__dict__[k],'sigma',
-            #                         Slice('%s-sigma'%k,
-            #                             lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,sigma=x),
-            #                             lambda x, i=i, k=k: self.priors[k]['sigma'].logpdf(x),
-            #                             self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
-            #                     ))
-            #
-            # self.samplers.append((self.__dict__[k],'lengthscale',
-            #                         Slice('%s-lengthscale'%k,
-            #                             lambda x, i=i, k=k: self.priors['functions'][i].loglikelihood(self.model.beta,lengthscale=x),
-            #                             lambda x, i=i, k=k: self.priors[k]['lengthscale'].logpdf(x),
-            #                             self.config.config.getfloat(k,'slice-w'),self.config.config.getfloat(k,'slice-m'),logspace=True)
-            #                     ))
+        else:
+
+            self.samplers.append((self.yKernel,'sigma',
+                                    Slice('ySigma',
+                                        lambda x: self.model.dataLikelihood(self.yKernel,sigma=x),
+                                        lambda x: self.priors['yKernel']['sigma'].logpdf(x),
+                                        self.config.config.getfloat('yKernel','slice-w'),self.config.config.getfloat('yKernel','slice-m'),logspace=True)
+                                ))
+
+            for i in range(self.levels+1):
+                k = 'k%d'%(i+1)
+
+                self.samplers.append((self.__dict__[k],'sigma',
+                                        PriorSlice('%s-sigma'%k, self.model,
+                                            self.priors['functions'][i], self.priors[k]['sigma'],
+                                            'sigma',
+                                            self.config.config.getfloat(k,'slice-w'),
+                                            self.config.config.getfloat(k,'slice-m'),
+                                            logspace=True)
+                                    ))
+
+                self.samplers.append((self.__dict__[k],'lengthscale',
+                                        PriorSlice('%s-lengthscale'%k, self.model,
+                                            self.priors['functions'][i], self.priors[k]['lengthscale'],
+                                            'lengthscale',
+                                            self.config.config.getfloat(k,'slice-w'),
+                                            self.config.config.getfloat(k,'slice-m'),
+                                            logspace=True)
+                                    ))
 
     def sample(self):
 
@@ -127,7 +157,7 @@ class Sample(object):
             order = np.random.choice(order,len(order),replace=False)
 
         for o in order:
-            if o <= self.levels:
+            if o < self.config.f:
                 prior = self.priors['functions'][o]
                 prior.sample(self.model,self.yKernel)
             else:
