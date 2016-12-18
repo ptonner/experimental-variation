@@ -77,7 +77,7 @@ class Sample(object):
 
         if self.config.hierarchy:
 
-            self.samplers.append((self.yKernel.__dict__['k%d'%(self.config.levels+1)],'sigma',
+            self.samplers.append((self.yKernel.__dict__['k%d'%(self.levels+1)],'sigma',
                                     Slice('ySigma',
                                         lambda x: self.model.dataLikelihood(self.yKernel,**{'k%d_sigma'%(self.config.levels+1):x}),
                                         lambda x: self.priors['yKernel']['sigma'].logpdf(x),
