@@ -2,7 +2,7 @@ import gpmultipy, scipy, argparse, os
 import numpy as np
 import pandas as pd
 
-from gpmultipy.kernel import RBF, White
+from gpmultipy.kernel import RBF, White, Hierarchical
 from gpmultipy.freeze import Freezer
 from gpmultipy.sampler.slice import PriorSlice, Slice
 from gpmultipy import Model
@@ -39,6 +39,11 @@ class Sample(object):
             k = 'k%d'%(i+1)
             self.__dict__[k] = self.kernels[i+1]
         self.kernels = self.kernels[1:self.levels+2]
+
+        if self.config.hierarchy and self.levels < self.config.levels:
+            # self.yKernel = self.yKernel.kernels[-1]
+            args = self.yKernel.kernels[:self.levels]+[self.yKernel.kernels[-1]]
+            self.yKernel = Hierarchical(*args)
 
         self.y = pd.read_csv(os.path.join(config,ds,'data.csv')).values
 
