@@ -9,7 +9,16 @@ CP_TOL = 1e-5
 class Changepoint(CombinationKernel):
     """Kernel for a changepoint at position xc """
 
-    def __init__(self,k1,k2,kc,xc,cpDim):
+    def __init__(self,k1,k2=None,kc=1.,xc=np.array([[0]]),cpDim=0, changepointParameter=False):
+        """
+        arguments:
+            k1, k2: GPy.kern.Kernel
+            kc: float, covariance at the changepoint
+            xc: np.array, position of changepoint(s)
+            cpDim: int, dimension that changepoint exists on
+            changepointParameter: bool, whether xc should be linked as a parameter
+
+        """
         if k2 is None:
             super(Changepoint,self).__init__([k1],"changepoint")
             k2 = k1
@@ -22,7 +31,13 @@ class Changepoint(CombinationKernel):
         self.kc = Param('kc', kc, Logexp())
         self.link_parameter(self.kc)
 
+        self.changepointParameter = changepointParameter
         self.xc = np.array(xc)
+        if self.changepointParameter:
+            self.xc = Param('xc', self.xc)
+            self.link_parameter(self.xc)
+            self.xc.gradient = [[0]]
+
         self.cpDim = cpDim
 
     def Kdiag(self,X):
@@ -116,3 +131,6 @@ class Changepoint(CombinationKernel):
                                   np.where(np.outer(x1side,x2side_2), np.dot(G11,G22.T),
                                            np.where(np.outer(x1side_2,x2side), np.dot(G21,G12.T), 1
                          )))))
+
+        if self.changepointParameter:
+            self.xc.gradient = [[0]]
