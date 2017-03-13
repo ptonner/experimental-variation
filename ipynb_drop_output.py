@@ -67,7 +67,7 @@ nb = sys.stdin.read()
 json_in = json.loads(nb)
 
 nb_metadata = json_in["metadata"]
-suppress_output = False
+suppress_output = True
 if "git" in nb_metadata:
     if "suppress_outputs" in nb_metadata["git"] and nb_metadata["git"]["suppress_outputs"]:
         suppress_output = True
