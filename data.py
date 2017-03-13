@@ -1,4 +1,4 @@
-from popmachine import Machine
+from popmachine import Machine, DataSet
 import pandas as pd
 import os
 
@@ -10,13 +10,9 @@ if '.popmachine.db' in os.listdir('.'):
 
 machine = Machine()
 
-### od-cfu
-# data = pd.read_excel("data/cfu-od-raw.xlsx",index_col=0).T
-# meta = pd.DataFrame(data.columns)
-# meta['measurement'] = 'od'
-# data.columns = range(data.shape[1])
-#
-# machine.createPlate('cfu-od-1', data=data, experimentalDesign=meta)
+#################
+# od-cfu
+#################
 
 od = pd.read_excel("data/cfu-od-raw.xlsx")
 melt = pd.melt(od,id_vars=['strain'],var_name='time', value_name='OD600')
@@ -41,3 +37,20 @@ data = pd.merge(d1,d2,left_index=True, right_index=True)
 meta = pd.concat((m1,m2))
 
 machine.createPlate('cfu-od-1', data=data, experimentalDesign=meta)
+
+#################
+# pq-osmo
+#################
+
+ds = DataSet.fromDirectory("data/pq-osmo-control/")
+machine.createPlate('pq-osmo-control', data=ds.data, experimentalDesign=ds.meta)
+
+ds = DataSet.fromDirectory("data/pq-osmo-combo/")
+machine.createPlate('pq-osmo-combo', data=ds.data, experimentalDesign=ds.meta)
+
+#################
+# ura3-replicate
+#################
+
+ds = DataSet.fromDirectory("data/normalized/ura3-pq-replicate/")
+machine.createPlate('ura3-replicate', data=ds.data, experimentalDesign=ds.meta)
