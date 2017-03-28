@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy, GPy, popmachine, time
+import scipy, GPy, time
 from factory import ModelFactory, HierarchicalFactory
 
 
