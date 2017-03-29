@@ -30,6 +30,10 @@ class Simulation(object):
         self.m2 = HierarchicalFactory(self.x2,1)
         self.m3 = HierarchicalFactory(self.x3,2)
 
+    def __repr__(self,):
+
+        return 'simulation-%d-%d-%d-%.5lf-%.5lf-%.5lf' % (self.nobs, self.nbatch, self.nrep, self.sigma, self.batchVariance, self.repVariance)
+
     def setup(self):
         nobs, nbatch, nrep = self.nobs, self.nbatch, self.nrep
         ntot = nbatch * nrep
