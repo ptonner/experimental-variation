@@ -49,6 +49,8 @@ for k,ds in enumerate(sim.datasets):
     plt.tight_layout()
     plt.savefig("results/simulations/sim-%d.pdf"%k, bbox_inches='tight')
 
+    pd.DataFrame(accuracy).to_csv("results/sim-accuracy.csv",index=False)
+
 for k in intervals.keys():
     intervals[k] = 1.*intervals[k]/len(sim.datasets)
 
