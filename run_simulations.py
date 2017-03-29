@@ -1,3 +1,7 @@
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
 import factory, simulate, scipy
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,7 +11,7 @@ alpha = .05
 thresh = scipy.stats.norm.ppf((1-alpha/2))
 
 sim = simulate.Simulation()
-sim.generateSamples()
+sim.generateSamples(50)
 
 intervals = {}
 accuracy = {}
