@@ -2,8 +2,6 @@ import matplotlib
 matplotlib.use('Agg')
 
 import factory, simulate, scipy, argparse, os
-
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -41,12 +39,13 @@ sim.generateSamples(args.nsample)
 
 intervals = {}
 accuracy = {}
+likelihood = {}
 
 for k,ds in enumerate(sim.datasets):
 
     plt.figure(figsize=(10,10))
 
-    models = {}
+    # models = {}
     for i,y in enumerate(sim.splitSample(ds)):
 
         ax = plt.subplot2grid((4,5),(i,0))
@@ -57,7 +56,7 @@ for k,ds in enumerate(sim.datasets):
 
             gp,_ = m.batchTrain(y)
 
-            models[(i,j)] = gp
+            # models[(i,j)] = gp
 
             mu, cov = gp.predict_noiseless(sim.xpred,kern=m.predictionKernel(gp.kern))
             mu = mu[:,0]
@@ -69,10 +68,12 @@ for k,ds in enumerate(sim.datasets):
             if not (i,j) in intervals:
                 intervals[(i,j)] = 0
                 accuracy[(i,j)] = []
+                likelihood[(i,j)] = []
 
             if all((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std)):
                 intervals[(i,j)] += 1
             accuracy[(i,j)].append(1.*sum((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std))/sim.nobs)
+            likelihood[(i,j)].append(gp.log_likelihood())
 
             plt.plot(sim.x[:sim.nobs,0], sim.f[:sim.nobs],c='k')
 
@@ -80,8 +81,9 @@ for k,ds in enumerate(sim.datasets):
     plt.savefig("results/simulations/%s/sim-%d.pdf"%(str(sim), k), bbox_inches='tight')
 
     pd.DataFrame(accuracy).to_csv("results/%s-accuracy.csv"%str(sim),index=False)
+    pd.DataFrame(likelihood).to_csv("results/%s-likelihood.csv"%str(sim),index=False)
 
 for k in intervals.keys():
     intervals[k] = 1.*intervals[k]/len(sim.datasets)
 
-pd.DataFrame(accuracy).to_csv("results/sim-accuracy.csv",index=False)
+# pd.DataFrame(accuracy).to_csv("results/sim-accuracy.csv",index=False)
