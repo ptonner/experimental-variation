@@ -1,7 +1,8 @@
-
-import factory, simulate, scipy, argparse, os
 import matplotlib
 matplotlib.use('Agg')
+
+import factory, simulate, scipy, argparse, os
+
 
 import matplotlib.pyplot as plt
 import pandas as pd
