@@ -1,13 +1,38 @@
-import factory, simulate, scipy
+import factory, simulate, scipy, argparse, os
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+parser = argparse.ArgumentParser(description='Run experimental variation simulation.')
+
+parser.add_argument("--sigma", type=float, default=.01)
+parser.add_argument("--batchVariance", type=float, default=0.005)
+parser.add_argument("--repVariance", type=float, default=0.005)
+
+parser.add_argument("--nobs", type=float, default=15)
+parser.add_argument("--nbatch", type=float, default=4)
+parser.add_argument("--nrep", type=int, default=3)
+
+parser.add_argument("--nsample", type=int, default=3)
+
+args = parser.parse_args()
+
 alpha = .05
 thresh = scipy.stats.norm.ppf((1-alpha/2))
 
-sim = simulate.Simulation()
-sim.generateSamples()
+sim = simulate.Simulation(
+                nobs=args.nobs,
+                nrep=args.nrep,
+                nbatch=args.nbatch,
+                sigma=args.sigma,
+                batchVariance=args.batchVariance,
+                repVariance=args.repVariance
+            )
+
+if not str(sim) in os.listdir("results/simulations"):
+    os.mkdir('results/simulations/%s'%str(sim))
+
+sim.generateSamples(args.nsample)
 
 intervals = {}
 accuracy = {}
@@ -47,9 +72,9 @@ for k,ds in enumerate(sim.datasets):
             plt.plot(sim.x[:sim.nobs,0], sim.f[:sim.nobs],c='k')
 
     plt.tight_layout()
-    plt.savefig("results/simulations/sim-%d.pdf"%k, bbox_inches='tight')
+    plt.savefig("results/simulations/%s/sim-%d.pdf"%(str(sim), k), bbox_inches='tight')
 
-    pd.DataFrame(accuracy).to_csv("results/sim-accuracy.csv",index=False)
+    pd.DataFrame(accuracy).to_csv("results/%s-accuracy.csv"%str(sim),index=False)
 
 for k in intervals.keys():
     intervals[k] = 1.*intervals[k]/len(sim.datasets)
