@@ -37,7 +37,7 @@ if not str(sim) in os.listdir("results/simulations"):
 
 sim.generateSamples(args.nsample)
 
-intervals = {}
+interval = {}
 accuracy = {}
 likelihood = {}
 
@@ -66,14 +66,15 @@ for k,ds in enumerate(sim.datasets):
             plt.fill_between(sim.xpred[:,0], mu-2*std,mu+2*std, alpha=.4)
 
             if not (i,j) in intervals:
-                intervals[(i,j)] = 0
+                interval[(i,j)] = []
                 accuracy[(i,j)] = []
                 likelihood[(i,j)] = []
 
-            if all((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std)):
-                intervals[(i,j)] += 1
+            # if all((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std)):
+            #     intervals[(i,j)] += 1
             accuracy[(i,j)].append(1.*sum((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std))/sim.nobs)
             likelihood[(i,j)].append(gp.log_likelihood())
+            interval[(i,j)].append(np.mean(cov[:,0]))
 
             plt.plot(sim.x[:sim.nobs,0], sim.f[:sim.nobs],c='k')
 
@@ -82,6 +83,7 @@ for k,ds in enumerate(sim.datasets):
 
     pd.DataFrame(accuracy).to_csv("results/%s-accuracy.csv"%str(sim),index=False)
     pd.DataFrame(likelihood).to_csv("results/%s-likelihood.csv"%str(sim),index=False)
+    pd.DataFrame(interval).to_csv("results/%s-interval.csv"%str(sim),index=False)
 
 for k in intervals.keys():
     intervals[k] = 1.*intervals[k]/len(sim.datasets)
