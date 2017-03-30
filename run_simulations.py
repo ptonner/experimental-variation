@@ -54,7 +54,7 @@ for k,ds in enumerate(sim.datasets):
         for j, m in enumerate([sim.m0, sim.m1, sim.m2, sim.m3]):
             ax = plt.subplot2grid((4,5),(i,1+j))
 
-            gp,_ = m.batchTrain(y)
+            gp,_ = m.batchTrain(y,5)
 
             # models[(i,j)] = gp
 
