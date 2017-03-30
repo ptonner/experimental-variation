@@ -9,16 +9,23 @@ class ModelFactory(object):
         """The kernel for predicting underlying function."""
         return k
 
-    def buildKernel(self,):
-        return GPy.kern.RBF(1)
+    def parameters(self, gp):
 
-    def batchTrain(self, y, size=3):
+        ret = {}
+        ret['y_sigma']  = m.likelihood.sigma
+
+        return ret
+
+    def buildKernel(self,):
+        return GPy.kern.RBF(1, name='base')
+
+    def batchTrain(self, y, size=3,callback=None):
         best = None
 
         trained = []
 
         for s in range(size):
-            m = self.train(y)
+            m = self.train(y,callback=callback)
 
             trained.append(m)
 
@@ -27,14 +34,27 @@ class ModelFactory(object):
 
         return best, trained
 
-    def train(self, y):
-        k = self.buildKernel()
+    def train(self, y, max_iter=100, callback=None):
+        i = 0
+        while i < max_iter:
+            i += 1
 
-        m = GPy.models.GPRegression(self.x, y.T.reshape(y.shape[0]*y.shape[1] ,1), k)
-        m.randomize()
-        m.optimize()
+            try:
+                k = self.buildKernel()
 
-        return m
+                m = GPy.models.GPRegression(self.x, y.T.reshape(y.shape[0]*y.shape[1] ,1), k)
+
+                if not callback is None:
+                    m = callback(m)
+
+                m.randomize()
+                m.optimize()
+
+                return m
+            except:
+                continue
+
+        raise Exception('could not fit the model!')
 
 class HierarchicalFactory(ModelFactory):
 
@@ -50,6 +70,15 @@ class HierarchicalFactory(ModelFactory):
 
     def predictionKernel(self, k):
         return k.base
+
+    def parameters(self, gp):
+        ret = ModelFactory.parameters(self, gp)
+
+        for n in ['base'] + ['level%d'%i for i in range(self.levels)]:
+            ret["%s_sigma"] = gp.kern.__dict__[n].sigma
+            ret["%s_lengthscale"] = gp.kern.__dict__[n].lengthscale
+
+        return ret
 
 class OneLevelFactory(ModelFactory):
 
