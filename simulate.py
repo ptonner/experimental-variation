@@ -56,8 +56,8 @@ class Simulation(object):
 
         batchVariance, repVariance = self.batchVariance, self.repVariance
 
-        kbatch = GPy.kern.IndependentOutputs(GPy.kern.RBF(1,name='batch', variance=0.05, lengthscale=.5), index_dim=-2);
-        krep = GPy.kern.IndependentOutputs(GPy.kern.RBF(1,name='replicate', variance=0.05, lengthscale=.5))
+        kbatch = GPy.kern.IndependentOutputs(GPy.kern.RBF(1,name='batch', variance=self.batchVariance, lengthscale=.5), index_dim=-2);
+        krep = GPy.kern.IndependentOutputs(GPy.kern.RBF(1,name='replicate', variance=self.repVariance, lengthscale=.5))
 
         n = self.x.shape[0]
         cov = np.zeros((n*4, n*4))
@@ -88,6 +88,8 @@ class Simulation(object):
 
     def plotSamples(self, s):
 
+        diff = s-s.mean(1)[:,None]
+
         y0, y1 , y2, y3 = self.splitSample(s)
 
         plt.figure(figsize=(12,6))
@@ -103,6 +105,7 @@ class Simulation(object):
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y0[:,j]-y0.mean(1),color='C%d'%k,alpha=.6);
+        plt.ylim(diff.min(), diff.max())
 
         plt.subplot(242)
         plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
@@ -115,6 +118,7 @@ class Simulation(object):
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y1[:,j]-y1.mean(1),color='C%d'%k,alpha=.6);
+        plt.ylim(diff.min(), diff.max())
 
         plt.subplot(243)
         plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
@@ -127,6 +131,7 @@ class Simulation(object):
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y2[:,j]-y2.mean(1),color='C%d'%k,alpha=.6);
+        plt.ylim(diff.min(), diff.max())
 
         plt.subplot(244)
         plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
@@ -139,3 +144,4 @@ class Simulation(object):
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y3[:,j]-y3.mean(1),color='C%d'%k,alpha=.6);
+        plt.ylim(diff.min(), diff.max())
