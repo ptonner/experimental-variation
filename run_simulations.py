@@ -9,8 +9,8 @@ import numpy as np
 parser = argparse.ArgumentParser(description='Run experimental variation simulation.')
 
 parser.add_argument("--sigma", type=float, default=.01)
-parser.add_argument("--batchVariance", type=float, default=0.005)
-parser.add_argument("--repVariance", type=float, default=0.005)
+parser.add_argument("--batchVariance", type=float, default=0.05)
+parser.add_argument("--repVariance", type=float, default=0.05)
 
 parser.add_argument("--nobs", type=float, default=15)
 parser.add_argument("--nbatch", type=float, default=4)

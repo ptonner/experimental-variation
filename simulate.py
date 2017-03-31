@@ -14,7 +14,7 @@ def generateSample(mu, cov, nugget, length=50):
 
 class Simulation(object):
 
-    def __init__(self, nobs=15, nbatch = 4, nrep = 3, sigma=.01, batchVariance = 0.005, repVariance = 0.005):
+    def __init__(self, nobs=15, nbatch = 4, nrep = 3, sigma=.01, batchVariance = 0.05, repVariance = 0.05):
         self.nobs = nobs
         self.nbatch = nbatch
         self.nrep = nrep
@@ -53,8 +53,6 @@ class Simulation(object):
         self.xpred = np.zeros((nobs,3))
         self.xpred[:,0] = self.x[:nobs,0]
         self.xpred[:,1:] = -1
-
-        batchVariance, repVariance = self.batchVariance, self.repVariance
 
         kbatch = GPy.kern.IndependentOutputs(GPy.kern.RBF(1,name='batch', variance=self.batchVariance, lengthscale=.5), index_dim=-2);
         krep = GPy.kern.IndependentOutputs(GPy.kern.RBF(1,name='replicate', variance=self.repVariance, lengthscale=.5))
