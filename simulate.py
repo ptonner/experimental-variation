@@ -62,13 +62,13 @@ class Simulation(object):
         n = self.x.shape[0]
         cov = np.zeros((n*4, n*4))
 
-        cov[n:2*n,n:2*n] += kbatch.K(self.x)
-        cov[n:2*n,3*n:] += kbatch.K(self.x)
-        cov[3*n:,n:2*n] += kbatch.K(self.x)
+        cov[n:2*n,n:2*n] += krep.K(self.x)
+        cov[n:2*n,3*n:] += krep.K(self.x)
+        cov[3*n:,n:2*n] += krep.K(self.x)
 
-        cov[2*n:3*n,2*n:3*n] += krep.K(self.x)
-        cov[2*n:3*n,3*n:] += krep.K(self.x)
-        cov[3*n:,2*n:3*n] += krep.K(self.x)
+        cov[2*n:3*n,2*n:3*n] += kbatch.K(self.x)
+        cov[2*n:3*n,3*n:] += kbatch.K(self.x)
+        cov[3*n:,2*n:3*n] += kbatch.K(self.x)
 
         cov[3*n:,3*n:] += kbatch.K(self.x) + krep.K(self.x)
 
@@ -88,7 +88,7 @@ class Simulation(object):
 
     def plotSamples(self, s):
 
-        y0, y2 , y1, y3 = self.splitSample(s)
+        y0, y1 , y2, y3 = self.splitSample(s)
 
         plt.figure(figsize=(12,6))
 
