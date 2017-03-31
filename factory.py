@@ -34,6 +34,9 @@ class ModelFactory(object):
 
         return best, trained
 
+    def reshape(self, y):
+        return y.T.reshape(y.shape[0]*y.shape[1] ,1)
+
     def train(self, y, max_iter=100, callback=None):
         i = 0
         while i < max_iter:
