@@ -79,6 +79,9 @@ class Simulation(object):
         for _ in range(nsamp):
 
             s = generateSample(np.tile(self.f, 4), self.sampleCov, self.sigma, self.nobs)
+
+            s = (s-s.mean())/s.std()
+
             self.datasets.append(s)
 
     def splitSample(self, s):
