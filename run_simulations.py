@@ -12,8 +12,8 @@ parser.add_argument("--sigma", type=float, default=.01)
 parser.add_argument("--batchVariance", type=float, default=0.05)
 parser.add_argument("--repVariance", type=float, default=0.05)
 
-parser.add_argument("--nobs", type=float, default=15)
-parser.add_argument("--nbatch", type=float, default=4)
+parser.add_argument("--nobs", type=int, default=15)
+parser.add_argument("--nbatch", type=int, default=4)
 parser.add_argument("--nrep", type=int, default=3)
 
 parser.add_argument("--nsample", type=int, default=3)
