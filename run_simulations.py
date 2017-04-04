@@ -8,15 +8,17 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Run experimental variation simulation.')
 
-parser.add_argument("--sigma", type=float, default=.01)
-parser.add_argument("--batchVariance", type=float, default=0.05)
-parser.add_argument("--repVariance", type=float, default=0.05)
+parser.add_argument("--sigma", type=float, default=.01, help='iid noise variance')
+parser.add_argument("--batchVariance", type=float, default=0.05, help='variance from batch effects')
+parser.add_argument("--repVariance", type=float, default=0.05, help='variance from replicate effects')
 
-parser.add_argument("--nobs", type=int, default=15)
-parser.add_argument("--nbatch", type=int, default=4)
-parser.add_argument("--nrep", type=int, default=3)
+parser.add_argument("--nobs", type=int, default=20, help='number of observations for each replicate')
+parser.add_argument("--nbatch", type=int, default=4, help='number of batches')
+parser.add_argument("--nrep", type=int, default=3, help='number of replicates in each batch')
 
-parser.add_argument("--nsample", type=int, default=3)
+parser.add_argument("--nsample", type=int, default=3, help='number of simulations to run')
+
+parser.add_argument("--ntrain", type=int, default=5, help='number of batch GP trainings to run')
 
 args = parser.parse_args()
 
@@ -56,9 +58,11 @@ def extractParam(m, *args):
         else:
             return np.nan
 
-for k,ds in enumerate(sim.datasets):
+for k,samp in enumerate(sim.datasets):
 
     plt.figure(figsize=(10,10))
+
+    ds = samp['sample']
 
     # models = {}
     for i,y in enumerate(sim.splitSample(ds)):
@@ -69,9 +73,7 @@ for k,ds in enumerate(sim.datasets):
         for j, m in enumerate([sim.m0, sim.m1, sim.m2, sim.m3]):
             ax = plt.subplot2grid((4,5),(i,1+j))
 
-            gp,_ = m.batchTrain(y,5)
-
-            # models[(i,j)] = gp
+            gp,_ = m.batchTrain(y,args.ntrain)
 
             mu, cov = gp.predict_noiseless(sim.xpred,kern=m.predictionKernel(gp.kern))
             mu = mu[:,0]
@@ -88,9 +90,10 @@ for k,ds in enumerate(sim.datasets):
                 for key in parameters.keys():
                     parameters[key][(i,j)] = []
 
-            # if all((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std)):
-            #     intervals[(i,j)] += 1
-            accuracy[(i,j)].append(1.*sum((sim.f[:sim.nobs] > mu-thresh*std) & (sim.f[:sim.nobs] < mu+thresh*std))/sim.nobs)
+            f = sim.f.copy()
+            f = (f-samp['mean'])/samp['std']
+
+            accuracy[(i,j)].append(1.*sum((f[:sim.nobs] > mu-thresh*std) & (f[:sim.nobs] < mu+thresh*std))/sim.nobs)
             likelihood[(i,j)].append(gp.log_likelihood())
             interval[(i,j)].append(np.mean(cov[:,0]))
 
@@ -100,7 +103,7 @@ for k,ds in enumerate(sim.datasets):
                     p = p.values[0]
                 parameters[key][(i,j)].append(p)
 
-            plt.plot(sim.x[:sim.nobs,0], sim.f[:sim.nobs],c='k')
+            plt.plot(sim.x[:sim.nobs,0], f[:sim.nobs],c='k')
 
     plt.tight_layout()
     plt.savefig("results/simulations/%s/sim-%d.pdf"%(str(sim), k), bbox_inches='tight')
@@ -110,8 +113,3 @@ for k,ds in enumerate(sim.datasets):
     pd.DataFrame(interval).to_csv("results/%s-interval.csv"%str(sim),index=False)
     for key in parameters.keys():
         pd.DataFrame(parameters[key]).to_csv("results/%s-%s.csv"%(str(sim), key),index=False)
-
-# for k in intervals.keys():
-#     intervals[k] = 1.*intervals[k]/len(sim.datasets)
-
-# pd.DataFrame(accuracy).to_csv("results/sim-accuracy.csv",index=False)

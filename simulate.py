@@ -80,14 +80,23 @@ class Simulation(object):
 
             s = generateSample(np.tile(self.f, 4), self.sampleCov, self.sigma, self.nobs)
 
+            samp = {}
+            samp['mean'] = s.mean()
+            samp['std'] = s.std()
+
             s = (s-s.mean())/s.std()
 
-            self.datasets.append(s)
+            samp['sample'] = s
+
+            self.datasets.append(samp)
 
     def splitSample(self, s):
         return np.array_split(s,4,1)
 
     def plotSamples(self, s):
+
+        f = (self.f-s['mean'])/s['std']
+        s = s['sample']
 
         diff = s-s.mean(1)[:,None]
 
@@ -96,7 +105,7 @@ class Simulation(object):
         plt.figure(figsize=(12,6))
 
         plt.subplot(241)
-        plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
+        plt.plot(self.x[:self.nobs,0], f[:self.nobs],c='k',lw=3)
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y0[:,j],color='C%d'%k,alpha=.6);
@@ -109,7 +118,7 @@ class Simulation(object):
         plt.ylim(diff.min(), diff.max())
 
         plt.subplot(242)
-        plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
+        plt.plot(self.x[:self.nobs,0], f[:self.nobs],c='k',lw=3)
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y1[:,j],color='C%d'%k,alpha=.6);
@@ -122,7 +131,7 @@ class Simulation(object):
         plt.ylim(diff.min(), diff.max())
 
         plt.subplot(243)
-        plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
+        plt.plot(self.x[:self.nobs,0], f[:self.nobs],c='k',lw=3)
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y2[:,j],color='C%d'%k,alpha=.6);
@@ -135,7 +144,7 @@ class Simulation(object):
         plt.ylim(diff.min(), diff.max())
 
         plt.subplot(244)
-        plt.plot(self.x[:self.nobs,0], self.f[:self.nobs],c='k',lw=3)
+        plt.plot(self.x[:self.nobs,0], f[:self.nobs],c='k',lw=3)
         for j,z in enumerate(self.x[::self.nobs,1]):
                 k = np.unique(self.x[:,1]).tolist().index(z)
                 plt.plot(self.x[:self.nobs,0],y3[:,j],color='C%d'%k,alpha=.6);
