@@ -1,0 +1,3 @@
+[submodule "pystan-cache"]
+	path = pystan-cache
+	url = https://github.com/paulkernfeld/pystan-cache.git
