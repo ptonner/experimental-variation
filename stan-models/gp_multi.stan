@@ -6,6 +6,7 @@ data {
   int<lower=1, upper=L> prior[K]; # prior assignment for each function
   real alpha_prior[L,2];
   real length_scale_prior[L,2];
+  real sigma_prior[2];
 
   matrix[P,K] design;
   row_vector[N] y[P];
@@ -44,7 +45,7 @@ model {
     alpha[l] ~ gamma(alpha_prior[l,1], alpha_prior[l,2]);
   }
 
-  sigma ~ cauchy(0,5);
+  sigma ~ inv_gamma(sigma_prior[1], sigma_prior[2]);
 
   for (i in 1:K)
     f_eta[i] ~ normal(0, 1);
