@@ -17,7 +17,7 @@ class ModelFactory(object):
         return ret
 
     def buildKernel(self,):
-        return GPy.kern.RBF(1, name='base')
+        return GPy.kern.RBF(1, name='kern.base')
 
     def batchTrain(self, y, size=3,callback=None):
         best = None
