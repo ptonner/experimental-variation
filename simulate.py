@@ -1,6 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy, GPy, time
+import scipy
+import GPy
+import time
+import ConfigParser
+import io
+import time
+import os
+
 from factory import ModelFactory, HierarchicalFactory
 
 
@@ -14,17 +21,62 @@ def generateSample(mu, cov, nugget, length=50):
 
 class Simulation(object):
 
-    def __init__(self, nobs=15, nbatch = 4, nrep = 3, sigma=.01, batchVariance = 0.05, repVariance = 0.05):
+    @staticmethod
+    def search(d='', **kwargs):
+        """search directories for config files matching kwargs."""
+
+        for f in os.listdir(d):
+            files = os.listdir(os.path.join(d, f))
+            configs = filter(lambda x: '.cfg' in x, files)
+
+            if len(configs) == 0:
+                continue
+            configs = configs[0]
+
+            config = ConfigParser.RawConfigParser()
+            config.readfp(io.BytesIO(open(os.path.join(d,f,configs)).read()))
+
+            fail = False
+
+            if config.has_section('main'):
+                for k,v in kwargs.iteritems():
+                    if config.has_option('main', k):
+                        if type(v) == int:
+                            if config.getint('main', k) == v:
+                                continue
+                        elif type(v) == float:
+                            if config.getfloat('main', k) == v:
+                                continue
+                        elif type(v) == str:
+                            if config.get('main', k) == v:
+                                continue
+                    fail = True
+
+            if not fail:
+                yield f
+
+
+    def __init__(self, nobs=15, nbatch = 4, nrep = 3, sigma=.01, batchVariance = 0.05, repVariance = 0.05, mumax=2, A=1, lag=.4, xmax=2, config=None):
         self.nobs = nobs
         self.nbatch = nbatch
         self.nrep = nrep
         self.sigma = sigma
         self.batchVariance = batchVariance
         self.repVariance = repVariance
-        self.datasets = []
+
+        self.xmax = xmax
+
+        self.mumax = mumax
+        self.A = A
+        self.lag = lag
+
+        self.config(config)
 
         self.setup()
 
+        self._id = int(time.time() * (10**6))
+
+        self.datasets = []
         self.m0 = ModelFactory(self.x0)
         self.m1 = HierarchicalFactory(self.x1,1)
         self.m2 = HierarchicalFactory(self.x2,1)
@@ -32,7 +84,48 @@ class Simulation(object):
 
     def __repr__(self,):
 
-        return 'simulation-%d-%d-%d-%.5lf-%.5lf-%.5lf' % (self.nobs, self.nbatch, self.nrep, self.sigma, self.batchVariance, self.repVariance)
+        return 'simulation-%d-%d-%d-%.5lf-%.5lf-%.5lf' %\
+                    (self.nobs, self.nbatch, self.nrep, self.sigma,
+                     self.batchVariance, self.repVariance)
+
+    def config(self, cfile):
+        if cfile is None:
+            return
+
+        config = ConfigParser.RawConfigParser(allow_no_value=True)
+
+        with open(cfile) as f:
+            config.readfp(io.BytesIO(f.read()))
+
+        ints = ['nobs', 'nbatch', 'nrep']
+        floats = ['sigma', 'batchVariance',
+                    'repVariance', 'xmax', 'mumax', 'A', 'lag']
+
+        if config.has_section('main'):
+            for i in ints:
+                if config.has_option('main', i):
+                    self.__dict__[i] = config.getint('main',i)
+            for f in floats:
+                if config.has_option('main', f):
+                    self.__dict__[f] = config.getfloat('main',f)
+
+    def to_config(self, d=''):
+        config = ConfigParser.RawConfigParser()
+        config.optionxform = str
+
+        config.add_section('main')
+
+        ints = ['nobs', 'nbatch', 'nrep']
+        floats = ['sigma', 'batchVariance',
+                    'repVariance', 'xmax', 'mumax', 'A', 'lag']
+
+        for i in ints:
+            config.set('main', i, self.__dict__[i])
+        for f in floats:
+            config.set('main', f, self.__dict__[f])
+
+        # config.write(open(os.path.join(d, 'sim_%d.cfg'%self._id), 'w'))
+        return config
 
     def setup(self):
         nobs, nbatch, nrep = self.nobs, self.nbatch, self.nrep
@@ -44,7 +137,7 @@ class Simulation(object):
         self.x1 = np.zeros((nobs*ntot,2))
         self.x2 = np.zeros((nobs*ntot,2))
 
-        self.x[:,0] = self.x0[:,0] = self.x1[:,0] = self.x2[:,0] = np.tile(np.linspace(0,2, nobs), ntot)
+        self.x[:,0] = self.x0[:,0] = self.x1[:,0] = self.x2[:,0] = np.tile(np.linspace(0,self.xmax, nobs), ntot)
         self.x[:,1] = self.x2[:,1] = np.repeat(np.arange(nbatch), nrep*nobs)
         self.x[:,2] = self.x1[:,1] = np.repeat(np.arange(nbatch*nrep), nobs)
 
@@ -72,7 +165,8 @@ class Simulation(object):
 
         self.sampleCov = cov.copy()
 
-        self.f = gompertz(self.x[:,0], 2, 1, .4)
+        #self.f = gompertz(self.x[:,0], 2, 1, .4)
+        self.f = gompertz(self.x[:,0], self.mumax, self.A, self.lag)
 
     def generateSamples(self,nsamp=5):
 
