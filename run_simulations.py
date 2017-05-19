@@ -8,13 +8,21 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Run experimental variation simulation.')
 
+parser.add_argument('config', nargs='?', default=None, help='config file for simulation')
+
 parser.add_argument("--sigma", type=float, default=.01, help='iid noise variance')
 parser.add_argument("--batchVariance", type=float, default=0.05, help='variance from batch effects')
 parser.add_argument("--repVariance", type=float, default=0.05, help='variance from replicate effects')
 
 parser.add_argument("--nobs", type=int, default=20, help='number of observations for each replicate')
-parser.add_argument("--nbatch", type=int, default=4, help='number of batches')
+parser.add_argument("--nbatch", type=int, default=2, help='number of batches')
 parser.add_argument("--nrep", type=int, default=3, help='number of replicates in each batch')
+
+parser.add_argument("--mumax", type=float, default=2, help='mumax of gompertz model')
+parser.add_argument("-A", type=float, default=1, help='carrying capacity of gompertz model')
+parser.add_argument("--lag", type=float, default=.3, help='lag of gompertz model')
+
+parser.add_argument("--xmax", type=float, default=2, help='max x value')
 
 parser.add_argument("--nsample", type=int, default=3, help='number of simulations to run')
 
@@ -31,11 +39,21 @@ sim = simulate.Simulation(
                 nbatch=args.nbatch,
                 sigma=args.sigma,
                 batchVariance=args.batchVariance,
-                repVariance=args.repVariance
+                repVariance=args.repVariance,
+                mumax=args.mumax,
+                A=args.A,
+                lag=args.lag,
+                xmax=args.xmax,
+                config=args.config
             )
 
-if not str(sim) in os.listdir("results/simulations"):
-    os.mkdir('results/simulations/%s'%str(sim))
+if not str(sim._id) in os.listdir("results/simulations"):
+    os.mkdir('results/simulations/%d'%sim._id)
+
+if not 'figures' in os.listdir("results/simulations/%d"%sim._id):
+    os.mkdir('results/simulations/%d/figures'%sim._id)
+
+sim.to_config().write(open(os.path.join('results/simulations/%d'%sim._id, 'config.cfg'), 'w'))
 
 sim.generateSamples(args.nsample)
 
@@ -76,6 +94,10 @@ for k,samp in enumerate(sim.datasets):
             gp,_ = m.batchTrain(y,args.ntrain)
 
             mu, cov = gp.predict_noiseless(sim.xpred,kern=m.predictionKernel(gp.kern))
+
+            mu = (mu * samp['std']) + samp['mean']
+            cov = cov * (samp['std'] ** 2)
+
             mu = mu[:,0]
             std = np.sqrt(cov[:,0])
 
@@ -91,7 +113,7 @@ for k,samp in enumerate(sim.datasets):
                     parameters[key][(i,j)] = []
 
             f = sim.f.copy()
-            f = (f-samp['mean'])/samp['std']
+            #f = (f-samp['mean'])/samp['std']
 
             accuracy[(i,j)].append(1.*sum((f[:sim.nobs] > mu-thresh*std) & (f[:sim.nobs] < mu+thresh*std))/sim.nobs)
             likelihood[(i,j)].append(gp.log_likelihood())
@@ -106,10 +128,10 @@ for k,samp in enumerate(sim.datasets):
             plt.plot(sim.x[:sim.nobs,0], f[:sim.nobs],c='k')
 
     plt.tight_layout()
-    plt.savefig("results/simulations/%s/sim-%d.pdf"%(str(sim), k), bbox_inches='tight')
+    plt.savefig("results/simulations/%d/figures/sim-%d.pdf"%(sim._id, k), bbox_inches='tight')
 
-    pd.DataFrame(accuracy).to_csv("results/%s-accuracy.csv"%str(sim),index=False)
-    pd.DataFrame(likelihood).to_csv("results/%s-likelihood.csv"%str(sim),index=False)
-    pd.DataFrame(interval).to_csv("results/%s-interval.csv"%str(sim),index=False)
+    pd.DataFrame(accuracy).to_csv("results/simulations/%d/accuracy.csv"%sim._id,index=False)
+    pd.DataFrame(likelihood).to_csv("results/simulations/%d/likelihood.csv"%sim._id,index=False)
+    pd.DataFrame(interval).to_csv("results/simulations/%d/interval.csv"%sim._id,index=False)
     for key in parameters.keys():
-        pd.DataFrame(parameters[key]).to_csv("results/%s-%s.csv"%(str(sim), key),index=False)
+        pd.DataFrame(parameters[key]).to_csv("results/simulations/%d/%s.csv"%(sim._id, key),index=False)
