@@ -2,6 +2,7 @@ from GPy.core import Mapping, Param
 from paramz.transformations import Logexp
 import paramz.transformations
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Gompertz(Mapping):
 
@@ -36,7 +37,7 @@ class Gompertz(Mapping):
 
     def update_gradients(self, dL_dF, X):
 
-        #plt.plot(dL_dF)
+        # print dL_dF.shape
 
         #print dL_dF * (self.f(X) * self.f2(X) * np.e/self.A*(self.lam-X))
         #print np.sum(dL_dF * (self.f(X) * self.f2(X) * np.e/self.A*(self.lam-X)))

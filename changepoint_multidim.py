@@ -148,7 +148,8 @@ class Changepoint(CombinationKernel):
                                                 #         np.where(np.outer(x1side,x2side_cp), self.k1.K(X,self.xc),
                                                 #             np.where(np.outer(x1side_2,x2side_cp), self.k2.K(X,self.xc),
                                                                 # both are changepoints
-                                                                self.kc)
+                                                                # self.kc)
+                                                                self.kc.K(X,X2))
                          )))#))))
 
         # print k.shape
