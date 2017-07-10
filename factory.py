@@ -19,8 +19,11 @@ class ModelFactory(object):
     def buildKernel(self,):
         return GPy.kern.RBF(1, name='kern.base')
 
-    def batchTrain(self, y, size=3,callback=None):
+    def batchTrain(self, y, size=3, callback=None, selectionCriteria=None):
         best = None
+
+        if selectionCriteria is None:
+            selectionCriteria = lambda x, y: y.log_likelihood() < x.log_likelihood()
 
         trained = []
 
@@ -29,7 +32,8 @@ class ModelFactory(object):
 
             trained.append(m)
 
-            if best is None or best.log_likelihood() < m.log_likelihood():
+            # if best is None or best.log_likelihood() < m.log_likelihood():
+            if best is None or selectionCriteria(m, best):
                 best = m
 
         return best, trained
