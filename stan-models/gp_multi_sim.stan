@@ -1,5 +1,6 @@
 data {
   int<lower=1> N;
+  real x[N];
   int<lower=1> L; # number of priors
   int<lower=1> P; # number of replicates
   int<lower=1> K; # number of latent functions
@@ -16,11 +17,11 @@ transformed data {
 }
 model {}
 generated quantities {
-  real x[N];
+
   row_vector[N] y[P];
   matrix[K, N] f;
-  for (n in 1:N)
-    x[n] = uniform_rng(-2,2);
+  // for (n in 1:N)
+  //   x[n] = uniform_rng(-2,2);
 
   for (i in 1:K)
   {
@@ -36,9 +37,4 @@ generated quantities {
   for (i in 1:P)
     for (j in 1:N)
       y[i][j] = normal_rng((design[i]*f)[j], sigma);
-  // for (n in 1:N)
-  //   {
-  //     for (p in 1:P)
-  //       y[n,p] = normal_rng((f'*design)[n,p], sigma);
-  //   }
 }
