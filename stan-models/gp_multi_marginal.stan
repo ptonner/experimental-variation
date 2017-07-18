@@ -6,6 +6,8 @@ data {
   int<lower=1, upper=L> prior[K]; # prior assignment for each function
   real alpha_prior[L,2];
   real length_scale_prior[L,2];
+  real marginal_alpha_prior[2];
+  real marginal_lengthscale_prior[2];
   real sigma_prior[2];
 
   matrix[P,K] design;
@@ -15,6 +17,8 @@ data {
 parameters {
   real<lower=0> length_scale[L];
   real<lower=0> alpha[L];
+  real<lower=0> marginal_alpha;
+  real<lower=0> marginal_lengthscale;
   real<lower=0> sigma;
   vector[N] f_eta[K];
 }
@@ -39,6 +43,8 @@ transformed parameters {
 }
 model {
 
+  matrix[N, N] L_cov;
+
   for (l in 1:L)
   {
     length_scale[l] ~ gamma(length_scale_prior[l,1], length_scale_prior[l,2]);
@@ -50,6 +56,24 @@ model {
   for (i in 1:K)
     f_eta[i] ~ normal(0, 1);
 
+
+
+  marginal_lengthscale ~ gamma(marginal_lengthscale_prior[1], marginal_lengthscale_prior[2]);
+  marginal_alpha ~ gamma(marginal_alpha_prior[1], marginal_alpha_prior[2]);
+
+
+  {
+    matrix[N, N] cov;
+    cov = cov_exp_quad(x, marginal_alpha, marginal_lengthscale);
+    for (n in 1:N)
+      cov[n, n] = cov[n, n] + square(sigma);
+    L_cov = cholesky_decompose(cov);
+  }
+
+  // cov = cov_exp_quad(x, marginal_alpha, marginal_lengthscale);
+  //   for (n in 1:N)
+  //     cov[n, n] = pow(sigma, 2) + cov[n, n];
+
   for (i in 1:P)
-    y[i] ~ normal(design[i]*f, sigma);
+    y[i] ~ multi_normal_cholesky(design[i]*f, L_cov);
 }
