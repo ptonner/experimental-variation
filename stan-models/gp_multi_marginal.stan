@@ -47,7 +47,7 @@ model {
 
   for (l in 1:L)
   {
-    length_scale[l] ~ gamma(length_scale_prior[l,1], length_scale_prior[l,2]);
+    length_scale[l] ~ lognormal(length_scale_prior[l,1], length_scale_prior[l,2]);
     alpha[l] ~ gamma(alpha_prior[l,1], alpha_prior[l,2]);
   }
 
