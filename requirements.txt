@@ -43,7 +43,7 @@ jupyter-core==4.3.0
 MarkupSafe==1.0
 matplotlib==2.0.2
 mcmcplotlib==0.1.0
-mistune==0.7.4
+mistune==2.0.3
 mock==1.3.0
 nbconvert==5.2.1
 nbformat==4.3.0
